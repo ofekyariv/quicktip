@@ -161,7 +161,7 @@ class TipViewModel : ViewModel() {
             perPersonAmount = state.perPersonAmount,
             currency = state.selectedCurrency.code,
             roundingMode = state.roundingMode,
-            timestamp = System.currentTimeMillis()
+            timestamp = 0L // Will be set properly with platform-specific time in Unit 7
         )
         
         val updatedHistory = state.calculationHistory + calculation

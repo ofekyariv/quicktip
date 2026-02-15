@@ -62,11 +62,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.jetbrains.kmpapp"
+    namespace = "com.ofekyariv.quicktip"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.jetbrains.kmpapp"
+        applicationId = "com.ofekyariv.quicktip"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

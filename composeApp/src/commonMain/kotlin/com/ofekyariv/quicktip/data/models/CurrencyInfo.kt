@@ -20,7 +20,14 @@ data class CurrencyInfo(
         val formatted = if (decimals == 0) {
             amount.roundToInt().toString()
         } else {
-            String.format("%.${decimals}f", amount)
+            // Round to specified decimals
+            val multiplier = 10.0.pow(decimals)
+            val rounded = (amount * multiplier).roundToInt() / multiplier
+            // Format with decimals
+            val parts = rounded.toString().split('.')
+            val intPart = parts[0]
+            val decPart = if (parts.size > 1) parts[1].take(decimals).padEnd(decimals, '0') else "0".repeat(decimals)
+            "$intPart.$decPart"
         }
         return "$symbol$formatted"
     }
