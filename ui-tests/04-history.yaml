@@ -1,0 +1,37 @@
+appId: com.ofekyariv.quicktip
+---
+# 04 - Calculation History
+# Perform a calculation, save it, verify it appears in history.
+
+- launchApp
+
+- assertVisible: "QuickTip"
+
+# Enter bill amount
+- tapOn:
+    id: "bill_amount_input"
+- inputText: "75.50"
+
+# Select 15% tip
+- tapOn:
+    text: "15%"
+
+# Save to history
+- tapOn:
+    text: "Save"
+
+# Navigate to history view (if separate)
+- tapOn:
+    id: "history_tab"
+    optional: true
+
+# Verify the saved calculation is visible
+- assertVisible:
+    text: ".*75\\.50.*"
+
+# Take screenshot of history
+- takeScreenshot: 04-history-saved
+
+# Verify history count
+- assertVisible:
+    text: ".*\\$.*"

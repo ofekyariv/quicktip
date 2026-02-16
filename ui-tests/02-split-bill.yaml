@@ -1,0 +1,36 @@
+appId: com.ofekyariv.quicktip
+---
+# 02 - Split Bill Between People
+# Enter a bill, set tip, split between multiple people, verify per-person amount.
+
+- launchApp
+
+- assertVisible: "QuickTip"
+
+# Enter bill amount
+- tapOn:
+    id: "bill_amount_input"
+- inputText: "100.00"
+
+# Select 20% tip
+- tapOn:
+    text: "20%"
+
+# Increase number of people to 4
+- tapOn:
+    id: "people_increase"
+- tapOn:
+    id: "people_increase"
+- tapOn:
+    id: "people_increase"
+
+# Assert split amount: $120 / 4 = $30 per person
+- assertVisible:
+    text: ".*30\\.00.*"
+
+# Assert total is $120
+- assertVisible:
+    text: ".*120\\.00.*"
+
+# Take a screenshot
+- takeScreenshot: 02-split-bill

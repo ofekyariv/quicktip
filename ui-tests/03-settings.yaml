@@ -1,0 +1,48 @@
+appId: com.ofekyariv.quicktip
+---
+# 03 - Settings: Change Currency, Theme, Verify Persistence
+# Open settings, change currency to EUR, change theme to Dark, go back, reopen to verify.
+
+- launchApp
+
+- assertVisible: "QuickTip"
+
+# Open settings
+- tapOn:
+    text: "Settings"
+
+# Verify settings screen
+- assertVisible: "Calculator Defaults"
+- assertVisible: "Appearance"
+- assertVisible: "Premium"
+- assertVisible: "About"
+
+# Change currency to EUR
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: "EUR"
+
+# Change theme to Dark
+- tapOn:
+    text: "Dark"
+
+# Take screenshot of settings
+- takeScreenshot: 03-settings-configured
+
+# Go back to main screen
+- tapOn:
+    text: "Back"
+
+# Reopen settings to verify persistence
+- tapOn:
+    text: "Settings"
+
+# Verify EUR is still selected
+- assertVisible:
+    text: ".*EUR.*"
+
+# Verify Dark theme is selected
+- assertVisible: "Dark"
+
+- takeScreenshot: 03-settings-persisted

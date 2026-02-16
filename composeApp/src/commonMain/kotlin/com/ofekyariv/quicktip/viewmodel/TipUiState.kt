@@ -26,5 +26,9 @@ data class TipUiState(
     val showPremiumSheet: Boolean = false,
     val showSettings: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val isPurchaseLoading: Boolean = false,
+    val isAdLoading: Boolean = false,
+    val adLoadFailed: Boolean = false,
+    val error: String? = null,
+    val iapError: String? = null
 )

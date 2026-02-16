@@ -29,6 +29,7 @@ import com.ofekyariv.quicktip.data.repository.SettingsRepository
 import com.ofekyariv.quicktip.iap.IAPManager
 import com.ofekyariv.quicktip.iap.IAPProducts
 import com.ofekyariv.quicktip.util.getCurrentTimeMillis
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +38,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel for tip calculator.
- * Manages all calculation logic and state.
+ * Manages all calculation logic, state, validation, and error handling.
  */
 class TipViewModel(
     private val analytics: AnalyticsTracker,
@@ -52,54 +53,90 @@ class TipViewModel(
     init {
         // Load settings and calculation history on initialization
         viewModelScope.launch {
-            // Collect settings
-            settingsRepository.settings.collect { settings ->
-                val isPremiumActive = settings.isPremium || getCurrentTimeMillis() < settings.rewardAdUnlockExpiry
-                _uiState.update {
-                    it.copy(
-                        selectedCurrency = getCurrencyByCode(settings.defaultCurrency) ?: getDefaultCurrency(),
-                        tipPercentage = settings.defaultTipPercentage,
-                        roundingMode = settings.defaultRoundingMode,
-                        themeMode = settings.themeMode,
-                        dynamicTheme = settings.dynamicTheme,
-                        isPremium = isPremiumActive
-                    )
+            try {
+                settingsRepository.settings.collect { settings ->
+                    val isPremiumActive = settings.isPremium || getCurrentTimeMillis() < settings.rewardAdUnlockExpiry
+                    _uiState.update {
+                        it.copy(
+                            selectedCurrency = getCurrencyByCode(settings.defaultCurrency) ?: getDefaultCurrency(),
+                            tipPercentage = settings.defaultTipPercentage,
+                            roundingMode = settings.defaultRoundingMode,
+                            themeMode = settings.themeMode,
+                            dynamicTheme = settings.dynamicTheme,
+                            isPremium = isPremiumActive
+                        )
+                    }
                 }
+            } catch (e: Exception) {
+                // Settings load failure — use defaults silently
+                logError("settings_load_failed", e.message ?: "Unknown error")
             }
         }
 
         viewModelScope.launch {
-            // Collect calculation history
-            calculationRepository.getAllCalculations().collect { calculations ->
-                _uiState.update {
-                    it.copy(calculationHistory = calculations)
+            try {
+                calculationRepository.getAllCalculations().collect { calculations ->
+                    _uiState.update {
+                        it.copy(calculationHistory = calculations)
+                    }
                 }
+            } catch (e: Exception) {
+                // History load failure — use empty list
+                logError("history_load_failed", e.message ?: "Unknown error")
             }
         }
 
         // Observe IAP premium status and persist to DataStore
         viewModelScope.launch {
-            iapManager.isPremiumUnlocked().collect { isPurchased ->
-                if (isPurchased) {
-                    settingsRepository.setPremium(true)
+            try {
+                iapManager.isPremiumUnlocked().collect { isPurchased ->
+                    if (isPurchased) {
+                        settingsRepository.setPremium(true)
+                    }
                 }
+            } catch (e: Exception) {
+                // IAP observation failure — log silently
+                logError("iap_observe_failed", e.message ?: "Unknown error")
             }
         }
     }
 
     /**
      * Update bill amount and recalculate.
+     * Validates: numeric only, max $999,999.99
      */
     fun updateBillAmount(amount: String) {
-        // Validate input (allow only numbers and decimal point)
-        if (amount.isEmpty() || amount.matches(Regex("^\\d*\\.?\\d*$"))) {
-            _uiState.update { it.copy(billAmount = amount, error = null) }
-            calculateTip()
+        // Allow empty
+        if (amount.isEmpty()) {
+            _uiState.update { it.copy(billAmount = "", error = null, tipAmount = 0.0, totalAmount = 0.0, perPersonAmount = 0.0) }
+            return
         }
+
+        // Validate input (allow only numbers and decimal point)
+        if (!amount.matches(Regex("^\\d*\\.?\\d*$"))) {
+            return
+        }
+
+        val parsed = amount.toDoubleOrNull()
+        if (parsed != null && parsed > MAX_BILL_AMOUNT) {
+            _uiState.update { it.copy(error = "Bill amount is too large (max $MAX_BILL_AMOUNT)") }
+            analytics.trackErrorOccurred("bill_too_large", "Bill amount exceeds maximum")
+            return
+        }
+
+        if (parsed != null && parsed < 0) {
+            _uiState.update { it.copy(error = "Bill amount must be positive") }
+            analytics.trackErrorOccurred("negative_bill_amount", "Bill amount must be positive")
+            return
+        }
+
+        _uiState.update { it.copy(billAmount = amount, error = null) }
+        calculateTip()
     }
 
     /**
      * Update tip percentage and recalculate.
+     * Validates: 0-100% range.
      */
     fun updateTipPercentage(percentage: Int) {
         if (percentage in 0..100) {
@@ -113,19 +150,24 @@ class TipViewModel(
                 analytics.trackCustomTipEntered(percentage.toDouble())
             }
         } else {
-            _uiState.update { it.copy(error = "Tip percentage must be between 0 and 100%") }
-            analytics.trackErrorOccurred("invalid_tip_percentage", "Tip percentage must be between 0 and 100%")
+            _uiState.update { it.copy(error = "Tip percentage must be between 0% and 100%") }
+            analytics.trackErrorOccurred("invalid_tip_percentage", "Tip percentage out of range: $percentage")
         }
     }
 
     /**
      * Update number of people and recalculate.
+     * Validates: 1-99 range.
      */
     fun updateNumPeople(num: Int) {
-        if (num in 1..20) {
+        if (num in 1..MAX_PEOPLE) {
             _uiState.update { it.copy(numPeople = num, error = null) }
             calculateTip()
             analytics.trackSplitChanged(num)
+        } else if (num < 1) {
+            _uiState.update { it.copy(error = "Must have at least 1 person") }
+        } else {
+            _uiState.update { it.copy(error = "Maximum $MAX_PEOPLE people") }
         }
     }
 
@@ -183,12 +225,13 @@ class TipViewModel(
     /**
      * Calculate tip, total, and per-person amounts.
      * Runs automatically whenever inputs change.
+     * Defends against division by zero and invalid numbers.
      */
     private fun calculateTip() {
         val state = _uiState.value
         val billAmount = state.billAmount.toDoubleOrNull() ?: 0.0
 
-        if (billAmount <= 0) {
+        if (billAmount <= 0.0 || billAmount.isNaN() || billAmount.isInfinite()) {
             _uiState.update {
                 it.copy(
                     tipAmount = 0.0,
@@ -199,11 +242,9 @@ class TipViewModel(
             return
         }
 
-        // Validate bill amount
-        if (billAmount < 0) {
-            _uiState.update { it.copy(error = "Bill amount must be positive") }
-            analytics.trackErrorOccurred("negative_bill_amount", "Bill amount must be positive")
-            return
+        // Small amount warning
+        if (billAmount < MIN_BILL_AMOUNT) {
+            _uiState.update { it.copy(error = "Bill amount seems very small") }
         }
 
         // Calculate tip
@@ -219,8 +260,11 @@ class TipViewModel(
             state.selectedCurrency.decimals
         )
 
+        // Division by zero defense
+        val numPeople = state.numPeople.coerceAtLeast(1)
+
         // Calculate per-person amount
-        val perPersonAmount = TipCalculator.calculateSplit(roundedTotal, state.numPeople)
+        val perPersonAmount = TipCalculator.calculateSplit(roundedTotal, numPeople)
 
         // Apply rounding to per-person amount
         val roundedPerPerson = TipCalculator.applyRounding(
@@ -229,22 +273,31 @@ class TipViewModel(
             state.selectedCurrency.decimals
         )
 
+        // Guard against NaN/Infinity in results
+        val safeTip = if (tipAmount.isNaN() || tipAmount.isInfinite()) 0.0 else tipAmount
+        val safeTotal = if (roundedTotal.isNaN() || roundedTotal.isInfinite()) 0.0 else roundedTotal
+        val safePerPerson = if (roundedPerPerson.isNaN() || roundedPerPerson.isInfinite()) 0.0 else roundedPerPerson
+
         // Update state
         _uiState.update {
             it.copy(
-                tipAmount = tipAmount,
-                totalAmount = roundedTotal,
-                perPersonAmount = roundedPerPerson,
-                error = null
+                tipAmount = safeTip,
+                totalAmount = safeTotal,
+                perPersonAmount = safePerPerson,
+                error = if (billAmount >= MIN_BILL_AMOUNT) null else it.error
             )
         }
 
         // Track calculation performed
-        analytics.trackCalculationPerformed(
-            state.selectedCurrency.code,
-            state.tipPercentage.toDouble(),
-            state.numPeople
-        )
+        try {
+            analytics.trackCalculationPerformed(
+                state.selectedCurrency.code,
+                state.tipPercentage.toDouble(),
+                numPeople
+            )
+        } catch (_: Exception) {
+            // Analytics failure — log silently, don't disrupt UX
+        }
     }
 
     /**
@@ -282,12 +335,14 @@ class TipViewModel(
 
         // Persist to database
         viewModelScope.launch {
-            calculationRepository.saveCalculation(calculation)
-
-            // Track calculation saved
-            analytics.trackCalculationSaved(billAmount, state.totalAmount)
-
-            _uiState.update { it.copy(error = null) }
+            try {
+                calculationRepository.saveCalculation(calculation)
+                analytics.trackCalculationSaved(billAmount, state.totalAmount)
+                _uiState.update { it.copy(error = null) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to save calculation. Please try again.") }
+                logError("save_calculation_failed", e.message ?: "Unknown error")
+            }
         }
     }
 
@@ -313,7 +368,12 @@ class TipViewModel(
      */
     fun deleteCalculation(id: Long) {
         viewModelScope.launch {
-            calculationRepository.deleteCalculation(id)
+            try {
+                calculationRepository.deleteCalculation(id)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to delete calculation") }
+                logError("delete_calculation_failed", e.message ?: "Unknown error")
+            }
         }
     }
 
@@ -322,7 +382,12 @@ class TipViewModel(
      */
     fun clearAllHistory() {
         viewModelScope.launch {
-            calculationRepository.clearAllHistory()
+            try {
+                calculationRepository.clearAllHistory()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to clear history") }
+                logError("clear_history_failed", e.message ?: "Unknown error")
+            }
         }
     }
 
@@ -364,19 +429,63 @@ class TipViewModel(
     }
 
     /**
-     * Launch the IAP purchase flow for premium.
+     * Launch the IAP purchase flow for premium with loading state and error handling.
      */
     fun purchasePremium() {
+        _uiState.update { it.copy(isPurchaseLoading = true, iapError = null) }
         analytics.trackPremiumViewed("purchase_button")
-        iapManager.launchPurchaseFlow(IAPProducts.PREMIUM_UNLOCK)
+        try {
+            iapManager.launchPurchaseFlow(IAPProducts.PREMIUM_UNLOCK)
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(
+                    isPurchaseLoading = false,
+                    iapError = "Purchase failed. Please try again."
+                )
+            }
+            logError("iap_purchase_failed", e.message ?: "Unknown error")
+        }
+        // Loading state will be cleared when IAP status flow emits
+        viewModelScope.launch {
+            delay(IAP_TIMEOUT_MS)
+            // If still loading after timeout, clear the spinner
+            if (_uiState.value.isPurchaseLoading) {
+                _uiState.update { it.copy(isPurchaseLoading = false) }
+            }
+        }
     }
 
     /**
-     * Restore previous premium purchases.
+     * Retry a failed IAP purchase.
+     */
+    fun retryPurchase() {
+        _uiState.update { it.copy(iapError = null) }
+        purchasePremium()
+    }
+
+    /**
+     * Restore previous premium purchases with error handling.
      */
     fun restorePurchases() {
-        iapManager.restorePurchases()
-        analytics.trackPremiumRestored()
+        _uiState.update { it.copy(isPurchaseLoading = true, iapError = null) }
+        try {
+            iapManager.restorePurchases()
+            analytics.trackPremiumRestored()
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(
+                    isPurchaseLoading = false,
+                    iapError = "Restore failed. Please try again."
+                )
+            }
+            logError("iap_restore_failed", e.message ?: "Unknown error")
+        }
+        viewModelScope.launch {
+            delay(IAP_TIMEOUT_MS)
+            if (_uiState.value.isPurchaseLoading) {
+                _uiState.update { it.copy(isPurchaseLoading = false) }
+            }
+        }
     }
 
     /**
@@ -390,11 +499,46 @@ class TipViewModel(
     }
 
     /**
+     * Handle ad load failure — hides ad area and retries once after delay.
+     */
+    fun onAdLoadFailed() {
+        _uiState.update { it.copy(adLoadFailed = true, isAdLoading = false) }
+        logError("ad_load_failed", "Banner ad failed to load")
+
+        // Retry once after 5 seconds
+        viewModelScope.launch {
+            delay(AD_RETRY_DELAY_MS)
+            _uiState.update { it.copy(adLoadFailed = false, isAdLoading = true) }
+        }
+    }
+
+    /**
+     * Handle successful ad load.
+     */
+    fun onAdLoaded() {
+        _uiState.update { it.copy(adLoadFailed = false, isAdLoading = false) }
+    }
+
+    /**
      * Show or hide the premium bottom sheet.
      */
     fun showPremiumSheet(show: Boolean) {
-        _uiState.update { it.copy(showPremiumSheet = show) }
+        _uiState.update { it.copy(showPremiumSheet = show, iapError = null) }
         if (show) analytics.trackPremiumViewed("sheet")
+    }
+
+    /**
+     * Clear the current error message.
+     */
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    /**
+     * Clear the IAP error message.
+     */
+    fun clearIapError() {
+        _uiState.update { it.copy(iapError = null) }
     }
 
     /**
@@ -410,7 +554,20 @@ class TipViewModel(
         return !state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT
     }
 
+    private fun logError(type: String, message: String) {
+        try {
+            analytics.trackErrorOccurred(type, message)
+        } catch (_: Exception) {
+            // Analytics itself failed — ignore silently
+        }
+    }
+
     companion object {
         const val FREE_HISTORY_LIMIT = 5
+        const val MAX_BILL_AMOUNT = 999_999.99
+        const val MIN_BILL_AMOUNT = 0.01
+        const val MAX_PEOPLE = 99
+        const val AD_RETRY_DELAY_MS = 5000L
+        const val IAP_TIMEOUT_MS = 30_000L
     }
 }

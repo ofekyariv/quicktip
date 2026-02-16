@@ -1,0 +1,41 @@
+appId: com.ofekyariv.quicktip
+---
+# 05 - Premium Flow
+# Tap premium icon, verify modal appears with features list and purchase options.
+
+- launchApp
+
+- assertVisible: "QuickTip"
+
+# Tap premium star icon in top bar
+- tapOn:
+    text: "Premium"
+
+# Verify premium sheet appears
+- assertVisible: "Unlock Premium"
+- assertVisible: "Get the most out of QuickTip"
+
+# Verify features are listed
+- assertVisible: "Unlimited calculation history"
+- assertVisible: "No banner ads"
+- assertVisible: "Material You dynamic theming"
+
+# Verify purchase button
+- assertVisible:
+    text: ".*Unlock Forever.*"
+
+# Verify watch ad option
+- assertVisible: "Watch Ad"
+
+# Verify restore option
+- assertVisible: "Restore Purchases"
+
+# Take screenshot of premium sheet
+- takeScreenshot: 05-premium-flow
+
+# Dismiss the sheet
+- swipe:
+    direction: DOWN
+    from:
+      column: 50%
+      row: 50%

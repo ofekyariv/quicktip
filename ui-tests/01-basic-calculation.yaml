@@ -1,0 +1,28 @@
+appId: com.ofekyariv.quicktip
+---
+# 01 - Basic Tip Calculation
+# Enter a bill amount, select a tip preset, verify the total is displayed.
+
+- launchApp
+
+- assertVisible: "QuickTip"
+
+# Enter bill amount
+- tapOn:
+    id: "bill_amount_input"
+- inputText: "50.00"
+
+# Select 18% tip preset
+- tapOn:
+    text: "18%"
+
+# Assert tip amount is displayed
+- assertVisible:
+    text: ".*9\\.00.*"
+
+# Assert total is displayed
+- assertVisible:
+    text: ".*59\\.00.*"
+
+# Take a screenshot for verification
+- takeScreenshot: 01-basic-calculation

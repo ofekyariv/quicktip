@@ -1,5 +1,6 @@
 package com.ofekyariv.quicktip.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -48,18 +49,17 @@ fun MainScreen() {
     if (uiState.showPremiumSheet) {
         PremiumSheet(
             onDismiss = { viewModel.showPremiumSheet(false) },
-            onPurchase = {
-                viewModel.purchasePremium()
-            },
-            onRestore = {
-                viewModel.restorePurchases()
-            },
+            onPurchase = { viewModel.purchasePremium() },
+            onRestore = { viewModel.restorePurchases() },
             onWatchAd = {
                 adManager.showRewardedAd {
                     viewModel.unlockWithRewardAd()
                 }
                 viewModel.showPremiumSheet(false)
-            }
+            },
+            isPurchaseLoading = uiState.isPurchaseLoading,
+            iapError = uiState.iapError,
+            onRetry = { viewModel.retryPurchase() }
         )
     }
 
@@ -97,8 +97,8 @@ fun MainScreen() {
             )
         },
         bottomBar = {
-            // Hide banner ads for premium users
-            if (!uiState.isPremium) {
+            // Hide banner ads for premium users; hide if ad load failed
+            if (!uiState.isPremium && !uiState.adLoadFailed) {
                 AdBannerView()
             }
         }
@@ -111,6 +111,45 @@ fun MainScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Error snackbar-style message
+            AnimatedVisibility(
+                visible = uiState.error != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                uiState.error?.let { errorMsg ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = errorMsg,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { viewModel.clearError() }) {
+                                Text(
+                                    "Dismiss",
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Show premium banner when history limit is reached
             if (!uiState.isPremium && uiState.calculationHistory.size >= TipViewModel.FREE_HISTORY_LIMIT) {
                 PremiumBanner(

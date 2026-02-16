@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +26,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,7 +39,10 @@ fun PremiumSheet(
     onDismiss: () -> Unit,
     onPurchase: () -> Unit,
     onRestore: () -> Unit,
-    onWatchAd: () -> Unit
+    onWatchAd: () -> Unit,
+    isPurchaseLoading: Boolean = false,
+    iapError: String? = null,
+    onRetry: () -> Unit = onPurchase
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -81,21 +87,52 @@ fun PremiumSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Purchase button
+            // IAP error with retry
+            if (iapError != null) {
+                Text(
+                    text = iapError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedButton(
+                    onClick = onRetry,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Try Again")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Purchase button with loading state
             Button(
                 onClick = onPurchase,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Purchase premium" },
+                enabled = !isPurchaseLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Unlock Forever — ${IAPProducts.PREMIUM_PRICE}")
+                if (isPurchaseLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Processing...")
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Unlock Forever — ${IAPProducts.PREMIUM_PRICE}")
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -103,7 +140,8 @@ fun PremiumSheet(
             // Watch Ad button
             OutlinedButton(
                 onClick = onWatchAd,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isPurchaseLoading
             ) {
                 Text("Watch Ad — Try 24h Free")
             }
@@ -111,7 +149,10 @@ fun PremiumSheet(
             Spacer(modifier = Modifier.height(4.dp))
 
             // Restore purchases
-            TextButton(onClick = onRestore) {
+            TextButton(
+                onClick = onRestore,
+                enabled = !isPurchaseLoading
+            ) {
                 Text("Restore Purchases")
             }
         }
