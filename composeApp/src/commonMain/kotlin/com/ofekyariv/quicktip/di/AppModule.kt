@@ -1,6 +1,11 @@
 package com.ofekyariv.quicktip.di
 
 import com.ofekyariv.quicktip.analytics.AnalyticsTracker
+import com.ofekyariv.quicktip.data.database.DatabaseDriverFactory
+import com.ofekyariv.quicktip.data.database.QuickTipDatabase
+import com.ofekyariv.quicktip.data.datastore.createDataStore
+import com.ofekyariv.quicktip.data.repository.CalculationRepository
+import com.ofekyariv.quicktip.data.repository.SettingsRepository
 import com.ofekyariv.quicktip.viewmodel.TipViewModel
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -12,11 +17,19 @@ val appModule = module {
     // Analytics
     single { AnalyticsTracker() }
     
-    // ViewModels
-    single { TipViewModel(get()) }
+    // Database
+    single { get<DatabaseDriverFactory>().createDriver() }
+    single { QuickTipDatabase(get()) }
     
-    // Repositories will be added in Unit 7
-    // Data sources will be added in Unit 2
+    // DataStore
+    single { createDataStore() }
+    
+    // Repositories
+    single { CalculationRepository(get()) }
+    single { SettingsRepository(get()) }
+    
+    // ViewModels
+    single { TipViewModel(get(), get(), get()) }
 }
 
 /**

@@ -7,6 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import com.ofekyariv.quicktip.ads.AdManager
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.initialize
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -14,6 +16,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Firebase
+        Firebase.initialize(this)
 
         // Initialize app dependencies
         initializeApp()

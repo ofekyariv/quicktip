@@ -1,0 +1,63 @@
+-- QuickTip Database Schema
+-- Stores calculation history and user settings
+
+-- Calculation History Table
+CREATE TABLE IF NOT EXISTS calculation (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bill_amount REAL NOT NULL,
+    tip_percentage REAL NOT NULL,
+    tip_amount REAL NOT NULL,
+    total_amount REAL NOT NULL,
+    num_people INTEGER NOT NULL,
+    per_person_amount REAL NOT NULL,
+    currency_code TEXT NOT NULL,
+    rounding_mode TEXT NOT NULL,
+    timestamp INTEGER NOT NULL
+);
+
+-- Query: Get all calculations (ordered by most recent)
+selectAll:
+SELECT * FROM calculation ORDER BY timestamp DESC;
+
+-- Query: Get recent calculations with limit
+selectRecent:
+SELECT * FROM calculation ORDER BY timestamp DESC LIMIT :limit;
+
+-- Query: Get calculation by ID
+selectById:
+SELECT * FROM calculation WHERE id = ?;
+
+-- Query: Count total calculations
+countAll:
+SELECT COUNT(*) FROM calculation;
+
+-- Insert a new calculation
+insertCalculation:
+INSERT INTO calculation (
+    bill_amount,
+    tip_percentage,
+    tip_amount,
+    total_amount,
+    num_people,
+    per_person_amount,
+    currency_code,
+    rounding_mode,
+    timestamp
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Delete calculation by ID
+deleteById:
+DELETE FROM calculation WHERE id = ?;
+
+-- Delete all calculations (clear history)
+deleteAll:
+DELETE FROM calculation;
+
+-- Delete old calculations (keep only N most recent)
+deleteOldest:
+DELETE FROM calculation
+WHERE id NOT IN (
+    SELECT id FROM calculation
+    ORDER BY timestamp DESC
+    LIMIT :keepCount
+);

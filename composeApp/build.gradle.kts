@@ -7,15 +7,12 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
+    androidTarget()
 
     listOf(
         iosX64(),
@@ -34,9 +31,12 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.play.services.ads)
+            implementation(libs.sqldelight.android.driver)
+            implementation(libs.androidx.datastore.preferences)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.sqldelight.native.driver)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -58,6 +58,14 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel)
+            
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
+            implementation(libs.androidx.datastore.core)
+            implementation(libs.androidx.datastore.preferences)
+
+            implementation(libs.firebase.app)
+            implementation(libs.firebase.analytics)
         }
     }
 }
@@ -91,4 +99,12 @@ android {
 
 dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+sqldelight {
+    databases {
+        create("QuickTipDatabase") {
+            packageName.set("com.ofekyariv.quicktip.data.database")
+        }
+    }
 }
