@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ofekyariv.quicktip.ads.AdBannerView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,6 +21,9 @@ fun MainScreen() {
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
+        },
+        bottomBar = {
+            AdBannerView()
         }
     ) { paddingValues ->
         Column(

@@ -33,6 +33,7 @@ kotlin {
             implementation(libs.androidx.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.play.services.ads)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
