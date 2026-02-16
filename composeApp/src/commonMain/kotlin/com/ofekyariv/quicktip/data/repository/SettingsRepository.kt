@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ofekyariv.quicktip.data.models.RoundingMode
 import com.ofekyariv.quicktip.data.models.Settings
+import com.ofekyariv.quicktip.data.models.ThemeMode
 import com.ofekyariv.quicktip.util.getCurrentTimeMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,16 +18,18 @@ import kotlinx.coroutines.flow.map
  * Repository for managing user settings/preferences.
  */
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
-    
+
     companion object {
         private val DEFAULT_CURRENCY = stringPreferencesKey("default_currency")
         private val DEFAULT_TIP_PERCENTAGE = intPreferencesKey("default_tip_percentage")
         private val DEFAULT_ROUNDING_MODE = stringPreferencesKey("default_rounding_mode")
+        private val THEME_MODE = stringPreferencesKey("theme_mode")
+        private val DYNAMIC_THEME = booleanPreferencesKey("dynamic_theme")
         private val IS_PREMIUM = booleanPreferencesKey("is_premium")
         private val REWARD_AD_UNLOCK_EXPIRY = longPreferencesKey("reward_ad_unlock_expiry")
         private val HISTORY_LIMIT = intPreferencesKey("history_limit")
     }
-    
+
     /**
      * Get settings as a Flow (reactive).
      */
@@ -39,12 +42,18 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             } catch (e: Exception) {
                 RoundingMode.NO_ROUNDING
             },
+            themeMode = try {
+                ThemeMode.valueOf(preferences[THEME_MODE] ?: "SYSTEM")
+            } catch (e: Exception) {
+                ThemeMode.SYSTEM
+            },
+            dynamicTheme = preferences[DYNAMIC_THEME] ?: false,
             isPremium = preferences[IS_PREMIUM] ?: false,
             rewardAdUnlockExpiry = preferences[REWARD_AD_UNLOCK_EXPIRY] ?: 0L,
             historyLimit = preferences[HISTORY_LIMIT] ?: 5
         )
     }
-    
+
     /**
      * Update default currency.
      */
@@ -53,7 +62,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[DEFAULT_CURRENCY] = currency
         }
     }
-    
+
     /**
      * Update default tip percentage.
      */
@@ -62,7 +71,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[DEFAULT_TIP_PERCENTAGE] = percentage
         }
     }
-    
+
     /**
      * Update default rounding mode.
      */
@@ -71,7 +80,25 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[DEFAULT_ROUNDING_MODE] = mode.name
         }
     }
-    
+
+    /**
+     * Update theme mode.
+     */
+    suspend fun updateThemeMode(mode: ThemeMode) {
+        dataStore.edit { preferences ->
+            preferences[THEME_MODE] = mode.name
+        }
+    }
+
+    /**
+     * Update dynamic theme (Material You) preference.
+     */
+    suspend fun updateDynamicTheme(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[DYNAMIC_THEME] = enabled
+        }
+    }
+
     /**
      * Set premium status (after IAP purchase).
      */
@@ -80,7 +107,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[IS_PREMIUM] = isPremium
         }
     }
-    
+
     /**
      * Unlock premium features for 24 hours (reward ad).
      */
@@ -90,7 +117,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[REWARD_AD_UNLOCK_EXPIRY] = expiryTime
         }
     }
-    
+
     /**
      * Update history limit (for free tier).
      */
@@ -99,7 +126,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             preferences[HISTORY_LIMIT] = limit
         }
     }
-    
+
     /**
      * Clear all settings (reset to defaults).
      */

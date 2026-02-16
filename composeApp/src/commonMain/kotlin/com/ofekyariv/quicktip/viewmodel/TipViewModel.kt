@@ -13,13 +13,16 @@ import com.ofekyariv.quicktip.analytics.trackPremiumRestored
 import com.ofekyariv.quicktip.analytics.trackPremiumViewed
 import com.ofekyariv.quicktip.analytics.trackRewardedUnlockActivated
 import com.ofekyariv.quicktip.analytics.trackRoundingRuleChanged
+import com.ofekyariv.quicktip.analytics.trackSettingsOpened
 import com.ofekyariv.quicktip.analytics.trackSplitChanged
+import com.ofekyariv.quicktip.analytics.trackThemeChanged
 import com.ofekyariv.quicktip.analytics.trackTipPresetUsed
 import com.ofekyariv.quicktip.data.TipCalculator
 import com.ofekyariv.quicktip.data.getCurrencyByCode
 import com.ofekyariv.quicktip.data.getDefaultCurrency
 import com.ofekyariv.quicktip.data.models.CurrencyInfo
 import com.ofekyariv.quicktip.data.models.RoundingMode
+import com.ofekyariv.quicktip.data.models.ThemeMode
 import com.ofekyariv.quicktip.data.models.TipCalculation
 import com.ofekyariv.quicktip.data.repository.CalculationRepository
 import com.ofekyariv.quicktip.data.repository.SettingsRepository
@@ -57,6 +60,8 @@ class TipViewModel(
                         selectedCurrency = getCurrencyByCode(settings.defaultCurrency) ?: getDefaultCurrency(),
                         tipPercentage = settings.defaultTipPercentage,
                         roundingMode = settings.defaultRoundingMode,
+                        themeMode = settings.themeMode,
+                        dynamicTheme = settings.dynamicTheme,
                         isPremium = isPremiumActive
                     )
                 }
@@ -81,7 +86,7 @@ class TipViewModel(
             }
         }
     }
-    
+
     /**
      * Update bill amount and recalculate.
      */
@@ -92,7 +97,7 @@ class TipViewModel(
             calculateTip()
         }
     }
-    
+
     /**
      * Update tip percentage and recalculate.
      */
@@ -100,7 +105,7 @@ class TipViewModel(
         if (percentage in 0..100) {
             _uiState.update { it.copy(tipPercentage = percentage, error = null) }
             calculateTip()
-            
+
             // Track tip preset usage
             if (percentage in listOf(10, 15, 18, 20, 25)) {
                 analytics.trackTipPresetUsed(percentage.toDouble())
@@ -112,7 +117,7 @@ class TipViewModel(
             analytics.trackErrorOccurred("invalid_tip_percentage", "Tip percentage must be between 0 and 100%")
         }
     }
-    
+
     /**
      * Update number of people and recalculate.
      */
@@ -123,7 +128,7 @@ class TipViewModel(
             analytics.trackSplitChanged(num)
         }
     }
-    
+
     /**
      * Update selected currency and recalculate.
      */
@@ -131,12 +136,12 @@ class TipViewModel(
         val oldCurrency = _uiState.value.selectedCurrency.code
         _uiState.update { it.copy(selectedCurrency = currency) }
         calculateTip()
-        
+
         if (oldCurrency != currency.code) {
             analytics.trackCurrencyChanged(oldCurrency, currency.code)
         }
     }
-    
+
     /**
      * Update rounding mode and recalculate.
      */
@@ -145,7 +150,36 @@ class TipViewModel(
         calculateTip()
         analytics.trackRoundingRuleChanged(mode.name)
     }
-    
+
+    /**
+     * Update theme mode and persist.
+     */
+    fun updateThemeMode(mode: ThemeMode) {
+        _uiState.update { it.copy(themeMode = mode) }
+        viewModelScope.launch {
+            settingsRepository.updateThemeMode(mode)
+        }
+        analytics.trackThemeChanged(mode.name)
+    }
+
+    /**
+     * Update dynamic theme (Material You) preference and persist.
+     */
+    fun updateDynamicTheme(enabled: Boolean) {
+        _uiState.update { it.copy(dynamicTheme = enabled) }
+        viewModelScope.launch {
+            settingsRepository.updateDynamicTheme(enabled)
+        }
+    }
+
+    /**
+     * Show or hide the settings screen.
+     */
+    fun showSettings(show: Boolean) {
+        _uiState.update { it.copy(showSettings = show) }
+        if (show) analytics.trackSettingsOpened()
+    }
+
     /**
      * Calculate tip, total, and per-person amounts.
      * Runs automatically whenever inputs change.
@@ -153,7 +187,7 @@ class TipViewModel(
     private fun calculateTip() {
         val state = _uiState.value
         val billAmount = state.billAmount.toDoubleOrNull() ?: 0.0
-        
+
         if (billAmount <= 0) {
             _uiState.update {
                 it.copy(
@@ -164,37 +198,37 @@ class TipViewModel(
             }
             return
         }
-        
+
         // Validate bill amount
         if (billAmount < 0) {
             _uiState.update { it.copy(error = "Bill amount must be positive") }
             analytics.trackErrorOccurred("negative_bill_amount", "Bill amount must be positive")
             return
         }
-        
+
         // Calculate tip
         val tipAmount = TipCalculator.calculateTip(billAmount, state.tipPercentage.toDouble())
-        
+
         // Calculate total
         val totalAmount = TipCalculator.calculateTotal(billAmount, tipAmount)
-        
+
         // Apply rounding to total
         val roundedTotal = TipCalculator.applyRounding(
             totalAmount,
             state.roundingMode,
             state.selectedCurrency.decimals
         )
-        
+
         // Calculate per-person amount
         val perPersonAmount = TipCalculator.calculateSplit(roundedTotal, state.numPeople)
-        
+
         // Apply rounding to per-person amount
         val roundedPerPerson = TipCalculator.applyRounding(
             perPersonAmount,
             state.roundingMode,
             state.selectedCurrency.decimals
         )
-        
+
         // Update state
         _uiState.update {
             it.copy(
@@ -204,7 +238,7 @@ class TipViewModel(
                 error = null
             )
         }
-        
+
         // Track calculation performed
         analytics.trackCalculationPerformed(
             state.selectedCurrency.code,
@@ -212,20 +246,20 @@ class TipViewModel(
             state.numPeople
         )
     }
-    
+
     /**
      * Save current calculation to history.
-     * Free users limited to 10 items.
+     * Free users limited to 5 items.
      */
     fun saveToHistory() {
         val state = _uiState.value
         val billAmount = state.billAmount.toDoubleOrNull() ?: 0.0
-        
+
         if (billAmount <= 0) {
             _uiState.update { it.copy(error = "Please enter a bill amount first") }
             return
         }
-        
+
         // Check free tier limit (5 for free users)
         if (!state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT) {
             _uiState.update {
@@ -233,7 +267,7 @@ class TipViewModel(
             }
             return
         }
-        
+
         val calculation = TipCalculation(
             billAmount = billAmount,
             tipPercentage = state.tipPercentage.toDouble(),
@@ -245,18 +279,18 @@ class TipViewModel(
             roundingMode = state.roundingMode,
             timestamp = getCurrentTimeMillis()
         )
-        
+
         // Persist to database
         viewModelScope.launch {
             calculationRepository.saveCalculation(calculation)
-            
+
             // Track calculation saved
             analytics.trackCalculationSaved(billAmount, state.totalAmount)
-            
+
             _uiState.update { it.copy(error = null) }
         }
     }
-    
+
     /**
      * Clear current calculation.
      */
@@ -265,13 +299,15 @@ class TipViewModel(
             TipUiState(
                 selectedCurrency = it.selectedCurrency,
                 roundingMode = it.roundingMode,
+                themeMode = it.themeMode,
+                dynamicTheme = it.dynamicTheme,
                 calculationHistory = it.calculationHistory,
                 isPremium = it.isPremium,
                 showPremiumSheet = it.showPremiumSheet
             )
         }
     }
-    
+
     /**
      * Delete a calculation from history.
      */
@@ -280,7 +316,7 @@ class TipViewModel(
             calculationRepository.deleteCalculation(id)
         }
     }
-    
+
     /**
      * Clear all calculation history.
      */
@@ -289,7 +325,7 @@ class TipViewModel(
             calculationRepository.clearAllHistory()
         }
     }
-    
+
     /**
      * Update default currency preference.
      */
@@ -298,7 +334,7 @@ class TipViewModel(
             settingsRepository.updateDefaultCurrency(currency)
         }
     }
-    
+
     /**
      * Update default tip percentage preference.
      */
@@ -307,7 +343,7 @@ class TipViewModel(
             settingsRepository.updateDefaultTipPercentage(percentage)
         }
     }
-    
+
     /**
      * Update default rounding mode preference.
      */
@@ -316,7 +352,7 @@ class TipViewModel(
             settingsRepository.updateDefaultRoundingMode(mode)
         }
     }
-    
+
     /**
      * Update premium status (after IAP purchase).
      */
