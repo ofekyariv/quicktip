@@ -7,7 +7,7 @@ import dev.gitlive.firebase.analytics.analytics
  * Android implementation of AnalyticsTracker using Firebase Analytics.
  */
 actual class AnalyticsTracker actual constructor() {
-    private val firebaseAnalytics = Firebase.analytics
+    private val firebaseAnalytics by lazy { Firebase.analytics }
 
     actual fun logEvent(name: String, params: Map<String, Any>) {
         try {
