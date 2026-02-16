@@ -2,6 +2,7 @@ package com.ofekyariv.quicktip.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ofekyariv.quicktip.analytics.AnalyticsTracker
 import com.ofekyariv.quicktip.data.TipCalculator
 import com.ofekyariv.quicktip.data.models.CurrencyInfo
 import com.ofekyariv.quicktip.data.models.RoundingMode
@@ -16,7 +17,9 @@ import kotlinx.coroutines.launch
  * ViewModel for tip calculator.
  * Manages all calculation logic and state.
  */
-class TipViewModel : ViewModel() {
+class TipViewModel(
+    private val analytics: AnalyticsTracker
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow(TipUiState())
     val uiState: StateFlow<TipUiState> = _uiState.asStateFlow()
@@ -41,8 +44,16 @@ class TipViewModel : ViewModel() {
         if (percentage in 0..100) {
             _uiState.update { it.copy(tipPercentage = percentage, error = null) }
             calculateTip()
+            
+            // Track tip preset usage
+            if (percentage in listOf(10, 15, 18, 20, 25)) {
+                analytics.trackTipPresetUsed(percentage.toDouble())
+            } else {
+                analytics.trackCustomTipEntered(percentage.toDouble())
+            }
         } else {
             _uiState.update { it.copy(error = "Tip percentage must be between 0 and 100%") }
+            analytics.trackErrorOccurred("invalid_tip_percentage", "Tip percentage must be between 0 and 100%")
         }
     }
     
@@ -53,6 +64,7 @@ class TipViewModel : ViewModel() {
         if (num in 1..20) {
             _uiState.update { it.copy(numPeople = num, error = null) }
             calculateTip()
+            analytics.trackSplitChanged(num)
         }
     }
     
@@ -60,8 +72,13 @@ class TipViewModel : ViewModel() {
      * Update selected currency and recalculate.
      */
     fun updateCurrency(currency: CurrencyInfo) {
+        val oldCurrency = _uiState.value.selectedCurrency.code
         _uiState.update { it.copy(selectedCurrency = currency) }
         calculateTip()
+        
+        if (oldCurrency != currency.code) {
+            analytics.trackCurrencyChanged(oldCurrency, currency.code)
+        }
     }
     
     /**
@@ -70,6 +87,7 @@ class TipViewModel : ViewModel() {
     fun updateRoundingMode(mode: RoundingMode) {
         _uiState.update { it.copy(roundingMode = mode) }
         calculateTip()
+        analytics.trackRoundingRuleChanged(mode.name)
     }
     
     /**
@@ -94,6 +112,7 @@ class TipViewModel : ViewModel() {
         // Validate bill amount
         if (billAmount < 0) {
             _uiState.update { it.copy(error = "Bill amount must be positive") }
+            analytics.trackErrorOccurred("negative_bill_amount", "Bill amount must be positive")
             return
         }
         
@@ -129,6 +148,13 @@ class TipViewModel : ViewModel() {
                 error = null
             )
         }
+        
+        // Track calculation performed
+        analytics.trackCalculationPerformed(
+            state.selectedCurrency.code,
+            state.tipPercentage.toDouble(),
+            state.numPeople
+        )
     }
     
     /**
@@ -172,6 +198,9 @@ class TipViewModel : ViewModel() {
                 error = null
             ) 
         }
+        
+        // Track calculation saved
+        analytics.trackCalculationSaved(billAmount, state.totalAmount)
         
         // TODO: Persist to DataStore in Unit 7
     }
