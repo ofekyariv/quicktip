@@ -20,6 +20,7 @@ data class TipUiState(
     val perPersonAmount: Double = 0.0,
     val calculationHistory: List<TipCalculation> = emptyList(),
     val isPremium: Boolean = false,
+    val showPremiumSheet: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
 )

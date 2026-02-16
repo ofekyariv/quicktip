@@ -2,6 +2,7 @@ package com.ofekyariv.quicktip.di
 
 import com.ofekyariv.quicktip.ads.AdManager
 import com.ofekyariv.quicktip.data.database.DatabaseDriverFactory
+import com.ofekyariv.quicktip.iap.IAPManager
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -12,4 +13,5 @@ import org.koin.dsl.module
 actual fun platformModule(): Module = module {
     single { DatabaseDriverFactory() }
     single { AdManager() }
+    single { IAPManager() }
 }

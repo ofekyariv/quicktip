@@ -9,5 +9,5 @@ data class Settings(
     val defaultRoundingMode: RoundingMode = RoundingMode.NO_ROUNDING,
     val isPremium: Boolean = false,
     val rewardAdUnlockExpiry: Long = 0L,
-    val historyLimit: Int = 10
+    val historyLimit: Int = 5
 )

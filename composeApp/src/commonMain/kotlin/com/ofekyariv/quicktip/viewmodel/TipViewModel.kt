@@ -8,6 +8,10 @@ import com.ofekyariv.quicktip.analytics.trackCalculationSaved
 import com.ofekyariv.quicktip.analytics.trackCurrencyChanged
 import com.ofekyariv.quicktip.analytics.trackCustomTipEntered
 import com.ofekyariv.quicktip.analytics.trackErrorOccurred
+import com.ofekyariv.quicktip.analytics.trackPremiumPurchased
+import com.ofekyariv.quicktip.analytics.trackPremiumRestored
+import com.ofekyariv.quicktip.analytics.trackPremiumViewed
+import com.ofekyariv.quicktip.analytics.trackRewardedUnlockActivated
 import com.ofekyariv.quicktip.analytics.trackRoundingRuleChanged
 import com.ofekyariv.quicktip.analytics.trackSplitChanged
 import com.ofekyariv.quicktip.analytics.trackTipPresetUsed
@@ -19,6 +23,8 @@ import com.ofekyariv.quicktip.data.models.RoundingMode
 import com.ofekyariv.quicktip.data.models.TipCalculation
 import com.ofekyariv.quicktip.data.repository.CalculationRepository
 import com.ofekyariv.quicktip.data.repository.SettingsRepository
+import com.ofekyariv.quicktip.iap.IAPManager
+import com.ofekyariv.quicktip.iap.IAPProducts
 import com.ofekyariv.quicktip.util.getCurrentTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,35 +39,44 @@ import kotlinx.coroutines.launch
 class TipViewModel(
     private val analytics: AnalyticsTracker,
     private val calculationRepository: CalculationRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val iapManager: IAPManager
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(TipUiState())
     val uiState: StateFlow<TipUiState> = _uiState.asStateFlow()
-    
+
     init {
         // Load settings and calculation history on initialization
         viewModelScope.launch {
             // Collect settings
             settingsRepository.settings.collect { settings ->
                 val isPremiumActive = settings.isPremium || getCurrentTimeMillis() < settings.rewardAdUnlockExpiry
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         selectedCurrency = getCurrencyByCode(settings.defaultCurrency) ?: getDefaultCurrency(),
                         tipPercentage = settings.defaultTipPercentage,
                         roundingMode = settings.defaultRoundingMode,
                         isPremium = isPremiumActive
-                    ) 
+                    )
                 }
             }
         }
-        
+
         viewModelScope.launch {
             // Collect calculation history
             calculationRepository.getAllCalculations().collect { calculations ->
-                val currentSettings = settingsRepository.settings
-                _uiState.update { 
-                    it.copy(calculationHistory = calculations) 
+                _uiState.update {
+                    it.copy(calculationHistory = calculations)
+                }
+            }
+        }
+
+        // Observe IAP premium status and persist to DataStore
+        viewModelScope.launch {
+            iapManager.isPremiumUnlocked().collect { isPurchased ->
+                if (isPurchased) {
+                    settingsRepository.setPremium(true)
                 }
             }
         }
@@ -211,10 +226,10 @@ class TipViewModel(
             return
         }
         
-        // Check free tier limit
-        if (!state.isPremium && state.calculationHistory.size >= 10) {
-            _uiState.update { 
-                it.copy(error = "History limit reached. Upgrade to Premium for unlimited history.") 
+        // Check free tier limit (5 for free users)
+        if (!state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT) {
+            _uiState.update {
+                it.copy(error = "History limit reached. Upgrade to Premium for unlimited history.")
             }
             return
         }
@@ -251,7 +266,8 @@ class TipViewModel(
                 selectedCurrency = it.selectedCurrency,
                 roundingMode = it.roundingMode,
                 calculationHistory = it.calculationHistory,
-                isPremium = it.isPremium
+                isPremium = it.isPremium,
+                showPremiumSheet = it.showPremiumSheet
             )
         }
     }
@@ -307,28 +323,58 @@ class TipViewModel(
     fun setPremiumStatus(isPremium: Boolean) {
         viewModelScope.launch {
             settingsRepository.setPremium(isPremium)
+            if (isPremium) analytics.trackPremiumPurchased()
         }
     }
-    
+
+    /**
+     * Launch the IAP purchase flow for premium.
+     */
+    fun purchasePremium() {
+        analytics.trackPremiumViewed("purchase_button")
+        iapManager.launchPurchaseFlow(IAPProducts.PREMIUM_UNLOCK)
+    }
+
+    /**
+     * Restore previous premium purchases.
+     */
+    fun restorePurchases() {
+        iapManager.restorePurchases()
+        analytics.trackPremiumRestored()
+    }
+
     /**
      * Unlock premium features for 24 hours (reward ad).
      */
     fun unlockWithRewardAd() {
         viewModelScope.launch {
             settingsRepository.unlockWithRewardAd()
+            analytics.trackRewardedUnlockActivated()
         }
     }
-    
+
+    /**
+     * Show or hide the premium bottom sheet.
+     */
+    fun showPremiumSheet(show: Boolean) {
+        _uiState.update { it.copy(showPremiumSheet = show) }
+        if (show) analytics.trackPremiumViewed("sheet")
+    }
+
     /**
      * Get calculation history count.
      */
     fun getHistoryCount(): Int = _uiState.value.calculationHistory.size
-    
+
     /**
-     * Check if history limit reached.
+     * Check if history limit reached (free: 5 max).
      */
     fun isHistoryLimitReached(): Boolean {
         val state = _uiState.value
-        return !state.isPremium && state.calculationHistory.size >= 10
+        return !state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT
+    }
+
+    companion object {
+        const val FREE_HISTORY_LIMIT = 5
     }
 }

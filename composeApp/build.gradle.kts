@@ -31,6 +31,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.play.services.ads)
+            implementation(libs.play.billing)
             implementation(libs.sqldelight.android.driver)
             implementation(libs.androidx.datastore.preferences)
         }

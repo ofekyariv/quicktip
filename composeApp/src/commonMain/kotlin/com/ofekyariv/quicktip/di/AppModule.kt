@@ -16,20 +16,20 @@ import org.koin.dsl.module
 val appModule = module {
     // Analytics
     single { AnalyticsTracker() }
-    
+
     // Database
     single { get<DatabaseDriverFactory>().createDriver() }
     single { QuickTipDatabase(get()) }
-    
+
     // DataStore
     single { createDataStore() }
-    
+
     // Repositories
     single { CalculationRepository(get()) }
     single { SettingsRepository(get()) }
-    
+
     // ViewModels
-    single { TipViewModel(get(), get(), get()) }
+    single { TipViewModel(get(), get(), get(), get()) }
 }
 
 /**

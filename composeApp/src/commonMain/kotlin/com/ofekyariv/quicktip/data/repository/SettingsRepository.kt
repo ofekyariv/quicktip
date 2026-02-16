@@ -41,7 +41,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             },
             isPremium = preferences[IS_PREMIUM] ?: false,
             rewardAdUnlockExpiry = preferences[REWARD_AD_UNLOCK_EXPIRY] ?: 0L,
-            historyLimit = preferences[HISTORY_LIMIT] ?: 10
+            historyLimit = preferences[HISTORY_LIMIT] ?: 5
         )
     }
     

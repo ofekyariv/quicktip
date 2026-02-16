@@ -1,17 +1,47 @@
 package com.ofekyariv.quicktip.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ofekyariv.quicktip.ads.AdBannerView
+import com.ofekyariv.quicktip.ads.AdManager
+import com.ofekyariv.quicktip.viewmodel.TipViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
+    val viewModel: TipViewModel = koinInject()
+    val adManager: AdManager = koinInject()
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Premium bottom sheet
+    if (uiState.showPremiumSheet) {
+        PremiumSheet(
+            onDismiss = { viewModel.showPremiumSheet(false) },
+            onPurchase = {
+                viewModel.purchasePremium()
+            },
+            onRestore = {
+                viewModel.restorePurchases()
+            },
+            onWatchAd = {
+                adManager.showRewardedAd {
+                    viewModel.unlockWithRewardAd()
+                }
+                viewModel.showPremiumSheet(false)
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -19,11 +49,25 @@ fun MainScreen() {
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                ),
+                actions = {
+                    if (!uiState.isPremium) {
+                        IconButton(onClick = { viewModel.showPremiumSheet(true) }) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Premium",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             )
         },
         bottomBar = {
-            AdBannerView()
+            // Hide banner ads for premium users
+            if (!uiState.isPremium) {
+                AdBannerView()
+            }
         }
     ) { paddingValues ->
         Column(
@@ -34,6 +78,14 @@ fun MainScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Show premium banner when history limit is reached
+            if (!uiState.isPremium && uiState.calculationHistory.size >= TipViewModel.FREE_HISTORY_LIMIT) {
+                PremiumBanner(
+                    onUpgradeClick = { viewModel.showPremiumSheet(true) }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             Text(
                 text = "QuickTip",
                 style = MaterialTheme.typography.headlineLarge,
