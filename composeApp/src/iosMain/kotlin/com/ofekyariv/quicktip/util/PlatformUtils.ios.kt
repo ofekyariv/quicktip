@@ -27,15 +27,7 @@ actual fun getAppVersion(): String {
 actual fun getDeviceLocaleCountryCode(): String {
     return try {
         val locale = NSLocale.currentLocale
-        locale.countryCode ?: "US"
-    } catch (_: Exception) {
-        "US" // Fallback to US
-    }
-}
-
-actual fun getDeviceLocaleCountryCode(): String {
-    return try {
-        NSLocale.currentLocale.countryCode ?: "US"
+        (locale.objectForKey(platform.Foundation.NSLocaleCountryCode) as? String) ?: "US"
     } catch (_: Exception) {
         "US" // Fallback to US
     }
