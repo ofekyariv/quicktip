@@ -41,7 +41,8 @@ fun SettingsScreen(
     onPremiumClick: () -> Unit,
     onSaveCurrency: (String) -> Unit,
     onSaveTipPercentage: (Int) -> Unit,
-    onSaveRoundingMode: (RoundingMode) -> Unit
+    onSaveRoundingMode: (RoundingMode) -> Unit,
+    onClearHistory: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -144,6 +145,19 @@ fun SettingsScreen(
                 onUnlockClick = {
                     performHapticFeedback()
                     onPremiumClick()
+                }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // History section
+            SettingsSectionHeader("History")
+
+            ClearHistoryButton(
+                calculationCount = uiState.calculationHistory.size,
+                onClearHistory = {
+                    performHapticFeedback()
+                    onClearHistory()
                 }
             )
 
@@ -452,6 +466,72 @@ private fun PremiumStatusRow(
                 Text("Unlock Premium")
             }
         }
+    }
+}
+
+@Composable
+private fun ClearHistoryButton(
+    calculationCount: Int,
+    onClearHistory: () -> Unit
+) {
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = calculationCount > 0) { showConfirmDialog = true }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Clear History",
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (calculationCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = if (calculationCount > 0) "$calculationCount saved calculations" else "No calculations to clear",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (calculationCount > 0) {
+            OutlinedButton(
+                onClick = { showConfirmDialog = true },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Clear All")
+            }
+        }
+    }
+
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Clear History?") },
+            text = { Text("This will permanently delete all $calculationCount saved calculations. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onClearHistory()
+                        showConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Clear All")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

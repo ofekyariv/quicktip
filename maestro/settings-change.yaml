@@ -1,0 +1,14 @@
+appId: com.ofekyariv.quicktip
+---
+# Test settings persistence (default tip percentage)
+- launchApp
+- tapOn: "Settings"
+- tapOn: "Default Tip"
+- inputText: "25"
+- tapOn: "Back"
+- assertVisible: "25%"
+- stopApp
+- launchApp
+- tapOn: "Settings"
+- assertVisible: "25%"
+- takeScreenshot: screenshots/settings-change.png

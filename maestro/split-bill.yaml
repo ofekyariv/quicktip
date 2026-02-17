@@ -1,0 +1,11 @@
+appId: com.ofekyariv.quicktip
+---
+# Test bill splitting functionality
+- launchApp
+- tapOn: "Bill Amount"
+- inputText: "200"
+- tapOn: "20%"
+- tapOn: "Split Between"
+- inputText: "4"
+- assertVisible: "Per Person.*60"
+- takeScreenshot: screenshots/split-bill.png

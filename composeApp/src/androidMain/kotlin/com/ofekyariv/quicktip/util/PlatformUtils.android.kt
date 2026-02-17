@@ -43,3 +43,17 @@ actual fun getAppVersion(): String {
         "1.0.0"
     }
 }
+
+actual fun getDeviceLocaleCountryCode(): String {
+    return try {
+        val context = HapticHelper.context
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            context.resources.configuration.locales[0].country
+        } else {
+            @Suppress("DEPRECATION")
+            context.resources.configuration.locale.country
+        }
+    } catch (_: Exception) {
+        "US" // Fallback to US
+    }
+}

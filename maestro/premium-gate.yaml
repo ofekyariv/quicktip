@@ -1,0 +1,25 @@
+appId: com.ofekyariv.quicktip
+---
+# Test free tier 5-calculation history limit
+- launchApp
+# Save 5 calculations
+- repeat:
+    times: 5
+    commands:
+      - tapOn: "Bill Amount"
+      - inputText: "${100 + index * 10}"
+      - tapOn: "18%"
+      - tapOn: "Save"
+      - assertVisible: "Saved"
+      - tapOn: "Clear"
+# Try to save a 6th calculation - should show limit error
+- tapOn: "Bill Amount"
+- inputText: "200"
+- tapOn: "18%"
+- tapOn: "Save"
+- assertVisible: "History limit reached"
+- assertVisible: "Upgrade to Premium"
+# Verify history shows exactly 5 calculations
+- tapOn: "History"
+- assertVisible: "5.*calculations"
+- takeScreenshot: screenshots/premium-gate.png

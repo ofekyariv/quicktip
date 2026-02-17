@@ -1,0 +1,11 @@
+appId: com.ofekyariv.quicktip
+---
+# Test basic tip calculation functionality
+- launchApp
+- tapOn: "Bill Amount"
+- inputText: "150"
+- tapOn: "18%"
+- assertVisible: "Subtotal.*150"
+- assertVisible: "Tip.*27"
+- assertVisible: "Total.*177"
+- takeScreenshot: screenshots/basic-calculation.png

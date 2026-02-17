@@ -1,8 +1,10 @@
 package com.ofekyariv.quicktip.viewmodel
 
 import com.ofekyariv.quicktip.data.getDefaultCurrency
+import com.ofekyariv.quicktip.data.models.CountryTipInfo
 import com.ofekyariv.quicktip.data.models.CurrencyInfo
 import com.ofekyariv.quicktip.data.models.RoundingMode
+import com.ofekyariv.quicktip.data.models.ServiceType
 import com.ofekyariv.quicktip.data.models.ThemeMode
 import com.ofekyariv.quicktip.data.models.TipCalculation
 
@@ -15,6 +17,8 @@ data class TipUiState(
     val tipPercentage: Int = 18,
     val numPeople: Int = 1,
     val selectedCurrency: CurrencyInfo = getDefaultCurrency(),
+    val selectedServiceType: ServiceType = ServiceType.RESTAURANT,
+    val currentCountryTipInfo: CountryTipInfo? = null,
     val roundingMode: RoundingMode = RoundingMode.NO_ROUNDING,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicTheme: Boolean = false,

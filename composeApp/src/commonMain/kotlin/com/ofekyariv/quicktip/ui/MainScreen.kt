@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.ofekyariv.quicktip.ads.AdBannerView
 import com.ofekyariv.quicktip.ads.AdManager
 import com.ofekyariv.quicktip.data.models.RoundingMode
+import com.ofekyariv.quicktip.data.models.ServiceType
 import com.ofekyariv.quicktip.viewmodel.TipViewModel
 import org.koin.compose.koinInject
 
@@ -50,7 +51,8 @@ fun MainScreen(
             onPremiumClick = { viewModel.showPremiumSheet(true) },
             onSaveCurrency = { viewModel.saveDefaultCurrency(it) },
             onSaveTipPercentage = { viewModel.saveDefaultTipPercentage(it) },
-            onSaveRoundingMode = { viewModel.saveDefaultRoundingMode(it) }
+            onSaveRoundingMode = { viewModel.saveDefaultRoundingMode(it) },
+            onClearHistory = { viewModel.clearAllHistory() }
         )
         return
     }
@@ -201,6 +203,15 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Service Type Selector
+            ServiceTypeSelector(
+                selectedServiceType = uiState.selectedServiceType,
+                onServiceTypeChange = { viewModel.updateServiceType(it) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Bill Amount Input Section
             BillAmountInput(
                 billAmount = uiState.billAmount,
@@ -250,6 +261,16 @@ fun MainScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Country Etiquette Hint Card
+            uiState.currentCountryTipInfo?.let { countryInfo ->
+                CountryEtiquetteCard(
+                    countryTipInfo = countryInfo,
+                    serviceType = uiState.selectedServiceType,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Action Buttons
             Row(
@@ -651,6 +672,232 @@ fun ResultRow(
             color = if (highlighted) MaterialTheme.colorScheme.primary 
                    else MaterialTheme.colorScheme.onPrimaryContainer
         )
+    }
+}
+
+@Composable
+fun ServiceTypeSelector(
+    selectedServiceType: ServiceType,
+    onServiceTypeChange: (ServiceType) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Service Type",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // First row: Restaurant, Taxi, Salon
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { testTag = "service_type_row_1" },
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedServiceType == ServiceType.RESTAURANT,
+                onClick = { onServiceTypeChange(ServiceType.RESTAURANT) },
+                label = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(ServiceType.RESTAURANT.emoji)
+                        Text(ServiceType.RESTAURANT.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { testTag = "service_chip_restaurant" }
+            )
+            FilterChip(
+                selected = selectedServiceType == ServiceType.TAXI,
+                onClick = { onServiceTypeChange(ServiceType.TAXI) },
+                label = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(ServiceType.TAXI.emoji)
+                        Text(ServiceType.TAXI.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { testTag = "service_chip_taxi" }
+            )
+            FilterChip(
+                selected = selectedServiceType == ServiceType.SALON,
+                onClick = { onServiceTypeChange(ServiceType.SALON) },
+                label = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(ServiceType.SALON.emoji)
+                        Text(ServiceType.SALON.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { testTag = "service_chip_salon" }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Second row: Hotel, Delivery, Counter
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { testTag = "service_type_row_2" },
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedServiceType == ServiceType.HOTEL,
+                onClick = { onServiceTypeChange(ServiceType.HOTEL) },
+                label = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(ServiceType.HOTEL.emoji)
+                        Text(ServiceType.HOTEL.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { testTag = "service_chip_hotel" }
+            )
+            FilterChip(
+                selected = selectedServiceType == ServiceType.DELIVERY,
+                onClick = { onServiceTypeChange(ServiceType.DELIVERY) },
+                label = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(ServiceType.DELIVERY.emoji)
+                        Text(ServiceType.DELIVERY.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { testTag = "service_chip_delivery" }
+            )
+            FilterChip(
+                selected = selectedServiceType == ServiceType.COUNTER,
+                onClick = { onServiceTypeChange(ServiceType.COUNTER) },
+                label = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(ServiceType.COUNTER.emoji)
+                        Text(ServiceType.COUNTER.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { testTag = "service_chip_counter" }
+            )
+        }
+    }
+}
+
+@Composable
+fun CountryEtiquetteCard(
+    countryTipInfo: com.ofekyariv.quicktip.data.models.CountryTipInfo,
+    serviceType: ServiceType,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.semantics { testTag = "country_etiquette_card" },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header: Flag + Country Name
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = countryTipInfo.flag,
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Text(
+                    text = countryTipInfo.countryName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Tipping Culture
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Tipping:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = countryTipInfo.culture.name.lowercase().replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = when (countryTipInfo.culture) {
+                        com.ofekyariv.quicktip.data.models.TippingCulture.EXPECTED -> MaterialTheme.colorScheme.primary
+                        com.ofekyariv.quicktip.data.models.TippingCulture.APPRECIATED -> MaterialTheme.colorScheme.tertiary
+                        com.ofekyariv.quicktip.data.models.TippingCulture.OPTIONAL -> MaterialTheme.colorScheme.secondary
+                        com.ofekyariv.quicktip.data.models.TippingCulture.UNCOMMON -> MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                        com.ofekyariv.quicktip.data.models.TippingCulture.RUDE -> MaterialTheme.colorScheme.error
+                    },
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Service Type Specific Tip Range
+            val tipRange = countryTipInfo.formatTipRange(serviceType)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "${serviceType.emoji} ${serviceType.label}:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = tipRange,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+            }
+
+            // Notes (if not empty)
+            if (countryTipInfo.notes.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = countryTipInfo.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                )
+            }
+        }
     }
 }
 

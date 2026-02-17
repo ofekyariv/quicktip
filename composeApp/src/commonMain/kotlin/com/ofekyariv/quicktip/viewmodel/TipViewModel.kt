@@ -22,14 +22,17 @@ import com.ofekyariv.quicktip.data.getCurrencyByCode
 import com.ofekyariv.quicktip.data.getDefaultCurrency
 import com.ofekyariv.quicktip.data.models.CurrencyInfo
 import com.ofekyariv.quicktip.data.models.RoundingMode
+import com.ofekyariv.quicktip.data.models.ServiceType
 import com.ofekyariv.quicktip.data.models.ThemeMode
 import com.ofekyariv.quicktip.data.models.TipCalculation
 import com.ofekyariv.quicktip.data.repository.CalculationRepository
 import com.ofekyariv.quicktip.data.repository.SettingsRepository
+import com.ofekyariv.quicktip.data.tipping.TippingDatabase
 import com.ofekyariv.quicktip.ads.AdManager
 import com.ofekyariv.quicktip.iap.IAPManager
 import com.ofekyariv.quicktip.iap.IAPProducts
 import com.ofekyariv.quicktip.util.getCurrentTimeMillis
+import com.ofekyariv.quicktip.util.getDeviceLocaleCountryCode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,6 +58,18 @@ class TipViewModel(
     val uiState: StateFlow<TipUiState> = _uiState.asStateFlow()
 
     init {
+        // Load country tip info based on device locale
+        val deviceCountryCode = try {
+            getDeviceLocaleCountryCode()
+        } catch (e: Exception) {
+            "US" // Fallback to US
+        }
+        val countryTipInfo = TippingDatabase.getByLocale(deviceCountryCode)
+        
+        _uiState.update {
+            it.copy(currentCountryTipInfo = countryTipInfo)
+        }
+        
         // Load settings and calculation history on initialization
         viewModelScope.launch {
             try {
@@ -156,6 +171,23 @@ class TipViewModel(
         } else {
             _uiState.update { it.copy(error = "Tip percentage must be between 0% and 100%") }
             analytics.trackErrorOccurred("invalid_tip_percentage", "Tip percentage out of range: $percentage")
+        }
+    }
+
+    /**
+     * Update selected service type and adjust suggested tip % based on country × service type.
+     */
+    fun updateServiceType(serviceType: ServiceType) {
+        val countryTipInfo = _uiState.value.currentCountryTipInfo
+        
+        _uiState.update { it.copy(selectedServiceType = serviceType) }
+        
+        // Auto-adjust tip percentage based on country × service type
+        if (countryTipInfo != null) {
+            val suggestedTip = countryTipInfo.getSuggestedTip(serviceType)
+            if (suggestedTip != null && suggestedTip > 0) {
+                updateTipPercentage(suggestedTip)
+            }
         }
     }
 
@@ -578,9 +610,9 @@ class TipViewModel(
     companion object {
         const val FREE_HISTORY_LIMIT = 5
         const val INTERSTITIAL_AD_FREQUENCY = 5
-        const val MAX_BILL_AMOUNT = 999_999.99
+        const val MAX_BILL_AMOUNT = 99_999.99
         const val MIN_BILL_AMOUNT = 0.01
-        const val MAX_PEOPLE = 99
+        const val MAX_PEOPLE = 20
         const val AD_RETRY_DELAY_MS = 5000L
         const val IAP_TIMEOUT_MS = 30_000L
     }

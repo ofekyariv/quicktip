@@ -1,0 +1,14 @@
+appId: com.ofekyariv.quicktip
+---
+# Test calculation save and history display
+- launchApp
+- tapOn: "Bill Amount"
+- inputText: "100"
+- tapOn: "15%"
+- tapOn: "Save"
+- assertVisible: "Saved"
+- tapOn: "History"
+- assertVisible: "100"
+- assertVisible: "15%"
+- assertVisible: "Calculation History"
+- takeScreenshot: screenshots/history-save.png
