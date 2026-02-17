@@ -10,6 +10,7 @@ import com.ofekyariv.quicktip.ads.AdManager
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.initialize
 import org.koin.android.ext.android.inject
+import org.koin.android.ext.koin.androidContext
 
 class MainActivity : ComponentActivity() {
     private val adManager: AdManager by inject()
@@ -20,8 +21,13 @@ class MainActivity : ComponentActivity() {
         // Initialize Firebase
         Firebase.initialize(this)
 
-        // Initialize app dependencies
-        initializeApp()
+        // Initialize DataStore before Koin
+        com.ofekyariv.quicktip.data.datastore.initializeDataStore(this)
+
+        // Initialize app dependencies with Android context
+        initializeApp {
+            androidContext(this@MainActivity.applicationContext)
+        }
 
         // Initialize AdMob
         adManager.initialize()

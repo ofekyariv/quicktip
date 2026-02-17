@@ -9,7 +9,7 @@ appId: com.ofekyariv.quicktip
 
 # Tap premium star icon in top bar
 - tapOn:
-    text: "Premium"
+    id: "premium_button"
 
 # Verify premium sheet appears
 - assertVisible: "Unlock Premium"
@@ -33,9 +33,9 @@ appId: com.ofekyariv.quicktip
 # Take screenshot of premium sheet
 - takeScreenshot: 05-premium-flow
 
-# Dismiss the sheet
+# Dismiss the sheet by swiping down
 - swipe:
     direction: DOWN
-    from:
-      column: 50%
-      row: 50%
+
+# Verify we're back on main screen
+- assertVisible: "Bill Amount"

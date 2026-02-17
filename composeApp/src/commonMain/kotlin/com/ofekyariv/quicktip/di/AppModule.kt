@@ -36,8 +36,9 @@ val appModule = module {
  * Initialize Koin dependency injection.
  * Call this once on app startup.
  */
-fun initKoin() {
+fun initKoin(appDeclaration: org.koin.core.KoinApplication.() -> Unit = {}) {
     startKoin {
+        appDeclaration()
         modules(appModule, platformModule())
     }
 }

@@ -32,6 +32,6 @@ fun App() {
 }
 
 // Initialize Koin on app start
-fun initializeApp() {
-    initKoin()
+fun initializeApp(appDeclaration: org.koin.core.KoinApplication.() -> Unit = {}) {
+    initKoin(appDeclaration)
 }

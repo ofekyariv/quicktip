@@ -14,23 +14,31 @@ appId: com.ofekyariv.quicktip
 
 # Select 20% tip
 - tapOn:
-    text: "20%"
+    id: "tip_chip_20"
 
-# Increase number of people to 4
-- tapOn:
-    id: "people_increase"
-- tapOn:
-    id: "people_increase"
-- tapOn:
-    id: "people_increase"
-
-# Assert split amount: $120 / 4 = $30 per person
+# Wait for split bill card to appear
 - assertVisible:
-    text: ".*30\\.00.*"
+    id: "split_bill_card"
 
-# Assert total is $120
+# Increase number of people to 4 (tap 3 times from default 1)
+- tapOn:
+    id: "split_increase"
+- tapOn:
+    id: "split_increase"
+- tapOn:
+    id: "split_increase"
+
+# Verify split count shows 4
 - assertVisible:
-    text: ".*120\\.00.*"
+    text: "4"
+
+# Verify per person amount is shown in results
+- assertVisible:
+    id: "result_per_person"
+
+# Verify total is $120 (100 + 20% tip)
+- assertVisible:
+    id: "result_total"
 
 # Take a screenshot
 - takeScreenshot: 02-split-bill

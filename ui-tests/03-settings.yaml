@@ -7,11 +7,11 @@ appId: com.ofekyariv.quicktip
 
 - assertVisible: "QuickTip"
 
-# Open settings
+# Open settings via icon button
 - tapOn:
-    text: "Settings"
+    id: "settings_button"
 
-# Verify settings screen
+# Verify settings screen sections
 - assertVisible: "Calculator Defaults"
 - assertVisible: "Appearance"
 - assertVisible: "Premium"
@@ -34,9 +34,12 @@ appId: com.ofekyariv.quicktip
 - tapOn:
     text: "Back"
 
+# Verify we're back on main screen
+- assertVisible: "Bill Amount"
+
 # Reopen settings to verify persistence
 - tapOn:
-    text: "Settings"
+    id: "settings_button"
 
 # Verify EUR is still selected
 - assertVisible:

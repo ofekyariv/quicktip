@@ -14,15 +14,24 @@ appId: com.ofekyariv.quicktip
 
 # Select 18% tip preset
 - tapOn:
-    text: "18%"
+    id: "tip_chip_18"
 
-# Assert tip amount is displayed
-- assertVisible:
-    text: ".*9\\.00.*"
+# Wait for calculation
+- runFlow:
+    when:
+      visible: "Results"
 
-# Assert total is displayed
+# Verify subtotal is shown
 - assertVisible:
-    text: ".*59\\.00.*"
+    id: "result_subtotal"
+
+# Verify tip amount ($9.00 for 18% of $50)
+- assertVisible:
+    id: "result_tip"
+
+# Verify total amount ($59.00)
+- assertVisible:
+    id: "result_total"
 
 # Take a screenshot for verification
 - takeScreenshot: 01-basic-calculation

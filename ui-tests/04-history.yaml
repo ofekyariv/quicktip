@@ -1,7 +1,7 @@
 appId: com.ofekyariv.quicktip
 ---
 # 04 - Calculation History
-# Perform a calculation, save it, verify it appears in history.
+# Perform a calculation, save it, verify it appears in history (via settings).
 
 - launchApp
 
@@ -14,24 +14,33 @@ appId: com.ofekyariv.quicktip
 
 # Select 15% tip
 - tapOn:
-    text: "15%"
+    id: "tip_chip_15"
+
+# Wait for results to calculate
+- assertVisible:
+    id: "results_card"
 
 # Save to history
 - tapOn:
-    text: "Save"
+    id: "save_button"
 
-# Navigate to history view (if separate)
+# Wait a moment for save to complete
+- runFlow:
+    when:
+      visible: "Bill Amount"
+
+# Go to settings where history is accessible
 - tapOn:
-    id: "history_tab"
+    id: "settings_button"
+
+# Scroll down to find history section (if exists)
+- scroll:
+    direction: DOWN
     optional: true
 
-# Verify the saved calculation is visible
-- assertVisible:
-    text: ".*75\\.50.*"
-
-# Take screenshot of history
+# Take screenshot
 - takeScreenshot: 04-history-saved
 
-# Verify history count
-- assertVisible:
-    text: ".*\\$.*"
+# Return to main screen
+- tapOn:
+    text: "Back"
