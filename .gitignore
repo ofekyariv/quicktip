@@ -16,3 +16,14 @@ captures
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+# Firebase config files (contain project-specific keys — keep local only)
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Signing keys
+*.jks
+*.keystore
+*.p12
+
+# Local properties already covered above

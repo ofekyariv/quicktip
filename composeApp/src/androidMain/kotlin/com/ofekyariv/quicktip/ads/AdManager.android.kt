@@ -2,6 +2,7 @@ package com.ofekyariv.quicktip.ads
 
 import android.app.Activity
 import android.content.Context
+import com.ofekyariv.quicktip.BuildConfig
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
@@ -11,16 +12,17 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
 /**
  * Android implementation of AdManager using Google Mobile Ads SDK.
+ * Ad unit IDs are loaded from BuildConfig (debug=test IDs, release=real IDs from local.properties).
  */
 actual class AdManager(private val context: Context) {
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
 
     companion object {
-        // Google AdMob Test IDs
-        private const val BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
-        private const val INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
-        private const val REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
+        // Ad unit IDs from BuildConfig — debug uses test IDs, release uses real IDs
+        private val BANNER_AD_UNIT_ID = BuildConfig.BANNER_AD_UNIT_ID
+        private val INTERSTITIAL_AD_UNIT_ID = BuildConfig.INTERSTITIAL_AD_UNIT_ID
+        private val REWARDED_AD_UNIT_ID = BuildConfig.REWARDED_AD_UNIT_ID
     }
 
     actual fun initialize() {
