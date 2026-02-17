@@ -1,9 +1,10 @@
 # QuickTip 💰
 
-A smart, elegant tip calculator with bill splitting and regional rounding preferences. Built with Kotlin Multiplatform for Android and iOS.
+A smart, elegant tip calculator with country etiquette guides, bill splitting, and regional rounding. Built with Kotlin Multiplatform for Android and iOS.
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-blue.svg)](https://kotlinlang.org)
+[![Google Play](https://img.shields.io/badge/Google%20Play-Coming%20Soon-green)](https://play.google.com/store/apps/details?id=com.ofekyariv.quicktip)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-purple.svg)](https://kotlinlang.org)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.7.1-blue.svg)](https://www.jetbrains.com/lp/compose-multiplatform)
 
 ---
@@ -13,7 +14,8 @@ A smart, elegant tip calculator with bill splitting and regional rounding prefer
 ### Core Functionality
 - 💵 **Smart Tip Calculation** - Calculate tips with customizable percentages
 - 👥 **Bill Splitting** - Split bills evenly among multiple people
-- 🌍 **Multi-Currency Support** - USD, EUR, GBP, ILS, INR, JPY, CAD, AUD, CNY, and more
+- 🌍 **50+ Country Tipping Guides** - Cultural etiquette and recommended ranges by service type
+- 🍽️ **6 Service Types** - Restaurant, Taxi, Salon, Hotel, Delivery, Counter Service
 - 🎯 **Regional Rounding** - Smart rounding based on regional preferences
   - US: Round to nearest $0.50 or $1.00
   - Israel: Round to nearest ₪0.10
@@ -215,16 +217,27 @@ QuickTip follows **Material Design 3** principles with:
 - [x] Dependency injection (Koin)
 - [x] Unit tests for core logic
 
-### 🚧 In Progress (Units 5-10)
-- [ ] AdMob integration (banner, interstitial, rewarded)
-- [ ] Firebase Analytics
-- [ ] Data persistence (SQLDelight + DataStore)
-- [ ] Calculation history screen
-- [ ] Premium features (IAP)
-- [ ] Settings screen
-- [ ] Error handling and validation
-- [ ] UI/UX polish
-- [ ] Maestro UI tests
+### ✅ Completed (Units 1-10)
+- [x] Project setup with KMP template
+- [x] Core calculation engine
+- [x] Main screen UI with Material 3
+- [x] Currency support (20+ currencies)
+- [x] Regional rounding rules
+- [x] Tip presets and custom slider
+- [x] Bill splitting logic
+- [x] ViewModel with StateFlow
+- [x] Dependency injection (Koin)
+- [x] Unit tests for core logic
+- [x] 50+ country tipping database
+- [x] Service type selector (6 types)
+- [x] AdMob integration (banner, interstitial, rewarded)
+- [x] Firebase Analytics
+- [x] Data persistence (SQLDelight + DataStore)
+- [x] Calculation history screen
+- [x] Premium features (IAP)
+- [x] Settings screen
+- [x] Error handling and validation
+- [x] 15 Maestro UI tests
 
 ### 🔮 Future Enhancements (v1.1+)
 - [ ] Bill scanning with OCR (ML Kit)
@@ -238,7 +251,7 @@ QuickTip follows **Material Design 3** principles with:
 
 ## 💎 Premium Features
 
-QuickTip offers a **$0.99 one-time purchase** to unlock premium features:
+QuickTip offers a **$1.99 one-time purchase** to unlock premium features:
 
 - ✅ **Unlimited calculation history** (free: last 5 only)
 - ✅ **Custom tip presets** (save favorite percentages)
