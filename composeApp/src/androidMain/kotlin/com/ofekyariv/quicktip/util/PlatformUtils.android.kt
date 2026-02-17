@@ -1,6 +1,8 @@
 package com.ofekyariv.quicktip.util
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -41,6 +43,34 @@ actual fun getAppVersion(): String {
         packageInfo.versionName ?: "1.0.0"
     } catch (_: Exception) {
         "1.0.0"
+    }
+}
+
+actual fun openUrl(url: String) {
+    try {
+        val context = HapticHelper.context
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        // Silently ignore if no browser available
+    }
+}
+
+actual fun shareText(text: String) {
+    try {
+        val context = HapticHelper.context
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share QuickTip").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+    } catch (_: Exception) {
+        // Silently ignore
     }
 }
 

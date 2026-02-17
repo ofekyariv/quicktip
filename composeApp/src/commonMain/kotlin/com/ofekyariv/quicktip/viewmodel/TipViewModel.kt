@@ -52,12 +52,19 @@ class TipViewModel(
     private val adManager: AdManager
 ) : ViewModel() {
 
-    private var calculationsSinceLastAd = 0
+    /** Counter for interstitial ad trigger: show after 3rd calculation per session, cap 2/session */
+    private var calculationsThisSession = 0
+    private var interstitialsShownThisSession = 0
 
     private val _uiState = MutableStateFlow(TipUiState())
     val uiState: StateFlow<TipUiState> = _uiState.asStateFlow()
 
     init {
+        // TODO: Ad scaffold — App-open ad on cold start
+        // showAppOpenAd() — show an app-open ad on every cold start (max 1 per 30 min session)
+        // Premium users skip all ad triggers.
+        onAppColdStart()
+
         // Load country tip info based on device locale
         val deviceCountryCode = try {
             getDeviceLocaleCountryCode()
@@ -82,12 +89,12 @@ class TipViewModel(
                             roundingMode = settings.defaultRoundingMode,
                             themeMode = settings.themeMode,
                             dynamicTheme = settings.dynamicTheme,
-                            isPremium = isPremiumActive
+                            isPremium = isPremiumActive,
+                            categoryTipDefaults = settings.categoryTipDefaults
                         )
                     }
                 }
             } catch (e: Exception) {
-                // Settings load failure — use defaults silently
                 logError("settings_load_failed", e.message ?: "Unknown error")
             }
         }
@@ -100,7 +107,6 @@ class TipViewModel(
                     }
                 }
             } catch (e: Exception) {
-                // History load failure — use empty list
                 logError("history_load_failed", e.message ?: "Unknown error")
             }
         }
@@ -114,27 +120,83 @@ class TipViewModel(
                     }
                 }
             } catch (e: Exception) {
-                // IAP observation failure — log silently
                 logError("iap_observe_failed", e.message ?: "Unknown error")
             }
         }
     }
+
+    // ─── Ad Scaffold (placeholders) ───────────────────────────────────────
+
+    /**
+     * TODO: Ad scaffold — App-open ad on cold start.
+     * Show an app-open ad on every cold start (max 1 per 30-min session).
+     * Premium users skip all ad triggers.
+     */
+    private fun onAppColdStart() {
+        // TODO: Implement actual AdMob app-open ad
+        // if (!_uiState.value.isPremium) { adManager.showAppOpenAd() }
+    }
+
+    /**
+     * TODO: Ad scaffold — Interstitial after 3rd calculation per session (cap 2/session).
+     * Called after each auto-save. Premium users skip.
+     */
+    private fun maybeShowInterstitialAd() {
+        val state = _uiState.value
+        if (state.isPremium) return
+        calculationsThisSession++
+        if (calculationsThisSession >= INTERSTITIAL_CALC_THRESHOLD && interstitialsShownThisSession < MAX_INTERSTITIALS_PER_SESSION) {
+            // TODO: Implement actual AdMob interstitial ad
+            // adManager.showInterstitialAd()
+            interstitialsShownThisSession++
+            calculationsThisSession = 0 // reset counter
+        }
+    }
+
+    /**
+     * TODO: Ad scaffold — Rewarded video at history limit.
+     * "Watch ad to save 5 more" — extends free limit by 5 temporarily.
+     * Premium users skip.
+     */
+    fun showRewardedAdForExtraHistory() {
+        // TODO: Implement actual AdMob rewarded video ad
+        // adManager.showRewardedAd { onRewardedHistoryExtension() }
+        // For now, placeholder:
+        onRewardedHistoryExtension()
+    }
+
+    /**
+     * Callback after rewarded ad watched — grants 5 extra history slots.
+     */
+    private fun onRewardedHistoryExtension() {
+        // TODO: Implement temporary history extension (e.g., +5 slots for this session)
+        // For now this is a no-op placeholder
+    }
+
+    /**
+     * TODO: Ad scaffold — Native ad every 5th history entry.
+     * Returns true if a native ad placeholder should be shown at this index.
+     * Premium users skip.
+     */
+    fun shouldShowNativeAdAtIndex(index: Int): Boolean {
+        if (_uiState.value.isPremium) return false
+        // TODO: Replace with actual native ad rendering
+        return (index + 1) % NATIVE_AD_FREQUENCY == 0
+    }
+
+    // ─── Bill & Calculation ──────────────────────────────────────────────
 
     /**
      * Update bill amount and recalculate.
      * Validates: numeric only, max $999,999.99
      */
     fun updateBillAmount(amount: String) {
-        // Allow empty
         if (amount.isEmpty()) {
             _uiState.update { it.copy(billAmount = "", error = null, tipAmount = 0.0, totalAmount = 0.0, perPersonAmount = 0.0) }
             return
         }
 
-        // Validate input (allow only numbers and decimal point)
-        if (!amount.matches(Regex("^\\d*\\.?\\d*$"))) {
-            return
-        }
+        if (!amount.matches(Regex("^\\d*\\.?\\d*$"))) return
 
         val parsed = amount.toDoubleOrNull()
         if (parsed != null && parsed > MAX_BILL_AMOUNT) {
@@ -155,14 +217,12 @@ class TipViewModel(
 
     /**
      * Update tip percentage and recalculate.
-     * Validates: 0-100% range.
      */
     fun updateTipPercentage(percentage: Int) {
         if (percentage in 0..100) {
             _uiState.update { it.copy(tipPercentage = percentage, error = null) }
             calculateTip()
 
-            // Track tip preset usage
             if (percentage in listOf(10, 15, 18, 20, 25)) {
                 analytics.trackTipPresetUsed(percentage.toDouble())
             } else {
@@ -175,14 +235,23 @@ class TipViewModel(
     }
 
     /**
-     * Update selected service type and adjust suggested tip % based on country × service type.
+     * Update selected service type and adjust tip % based on per-category defaults or country data.
      */
     fun updateServiceType(serviceType: ServiceType) {
-        val countryTipInfo = _uiState.value.currentCountryTipInfo
-        
+        val state = _uiState.value
         _uiState.update { it.copy(selectedServiceType = serviceType) }
-        
-        // Auto-adjust tip percentage based on country × service type
+
+        // Per-category default tip (premium) or country-based suggestion
+        if (state.isPremium) {
+            val categoryDefault = state.categoryTipDefaults[serviceType]
+            if (categoryDefault != null) {
+                updateTipPercentage(categoryDefault)
+                return
+            }
+        }
+
+        // Fallback: country-based suggestion
+        val countryTipInfo = state.currentCountryTipInfo
         if (countryTipInfo != null) {
             val suggestedTip = countryTipInfo.getSuggestedTip(serviceType)
             if (suggestedTip != null && suggestedTip > 0) {
@@ -193,7 +262,6 @@ class TipViewModel(
 
     /**
      * Update number of people and recalculate.
-     * Validates: 1-99 range.
      */
     fun updateNumPeople(num: Int) {
         if (num in 1..MAX_PEOPLE) {
@@ -207,52 +275,32 @@ class TipViewModel(
         }
     }
 
-    /**
-     * Update selected currency and recalculate.
-     */
     fun updateCurrency(currency: CurrencyInfo) {
         val oldCurrency = _uiState.value.selectedCurrency.code
         _uiState.update { it.copy(selectedCurrency = currency) }
         calculateTip()
-
         if (oldCurrency != currency.code) {
             analytics.trackCurrencyChanged(oldCurrency, currency.code)
         }
     }
 
-    /**
-     * Update rounding mode and recalculate.
-     */
     fun updateRoundingMode(mode: RoundingMode) {
         _uiState.update { it.copy(roundingMode = mode) }
         calculateTip()
         analytics.trackRoundingRuleChanged(mode.name)
     }
 
-    /**
-     * Update theme mode and persist.
-     */
     fun updateThemeMode(mode: ThemeMode) {
         _uiState.update { it.copy(themeMode = mode) }
-        viewModelScope.launch {
-            settingsRepository.updateThemeMode(mode)
-        }
+        viewModelScope.launch { settingsRepository.updateThemeMode(mode) }
         analytics.trackThemeChanged(mode.name)
     }
 
-    /**
-     * Update dynamic theme (Material You) preference and persist.
-     */
     fun updateDynamicTheme(enabled: Boolean) {
         _uiState.update { it.copy(dynamicTheme = enabled) }
-        viewModelScope.launch {
-            settingsRepository.updateDynamicTheme(enabled)
-        }
+        viewModelScope.launch { settingsRepository.updateDynamicTheme(enabled) }
     }
 
-    /**
-     * Show or hide the settings screen.
-     */
     fun showSettings(show: Boolean) {
         _uiState.update { it.copy(showSettings = show) }
         if (show) analytics.trackSettingsOpened()
@@ -260,8 +308,7 @@ class TipViewModel(
 
     /**
      * Calculate tip, total, and per-person amounts.
-     * Runs automatically whenever inputs change.
-     * Defends against division by zero and invalid numbers.
+     * Auto-saves result to history.
      */
     private fun calculateTip() {
         val state = _uiState.value
@@ -269,52 +316,26 @@ class TipViewModel(
 
         if (billAmount <= 0.0 || billAmount.isNaN() || billAmount.isInfinite()) {
             _uiState.update {
-                it.copy(
-                    tipAmount = 0.0,
-                    totalAmount = 0.0,
-                    perPersonAmount = 0.0
-                )
+                it.copy(tipAmount = 0.0, totalAmount = 0.0, perPersonAmount = 0.0)
             }
             return
         }
 
-        // Small amount warning
         if (billAmount < MIN_BILL_AMOUNT) {
             _uiState.update { it.copy(error = "Bill amount seems very small") }
         }
 
-        // Calculate tip
         val tipAmount = TipCalculator.calculateTip(billAmount, state.tipPercentage.toDouble())
-
-        // Calculate total
         val totalAmount = TipCalculator.calculateTotal(billAmount, tipAmount)
-
-        // Apply rounding to total
-        val roundedTotal = TipCalculator.applyRounding(
-            totalAmount,
-            state.roundingMode,
-            state.selectedCurrency.decimals
-        )
-
-        // Division by zero defense
+        val roundedTotal = TipCalculator.applyRounding(totalAmount, state.roundingMode, state.selectedCurrency.decimals)
         val numPeople = state.numPeople.coerceAtLeast(1)
-
-        // Calculate per-person amount
         val perPersonAmount = TipCalculator.calculateSplit(roundedTotal, numPeople)
+        val roundedPerPerson = TipCalculator.applyRounding(perPersonAmount, state.roundingMode, state.selectedCurrency.decimals)
 
-        // Apply rounding to per-person amount
-        val roundedPerPerson = TipCalculator.applyRounding(
-            perPersonAmount,
-            state.roundingMode,
-            state.selectedCurrency.decimals
-        )
-
-        // Guard against NaN/Infinity in results
         val safeTip = if (tipAmount.isNaN() || tipAmount.isInfinite()) 0.0 else tipAmount
         val safeTotal = if (roundedTotal.isNaN() || roundedTotal.isInfinite()) 0.0 else roundedTotal
         val safePerPerson = if (roundedPerPerson.isNaN() || roundedPerPerson.isInfinite()) 0.0 else roundedPerPerson
 
-        // Update state
         _uiState.update {
             it.copy(
                 tipAmount = safeTip,
@@ -324,69 +345,58 @@ class TipViewModel(
             )
         }
 
-        // Track calculation performed
         try {
-            analytics.trackCalculationPerformed(
-                state.selectedCurrency.code,
-                state.tipPercentage.toDouble(),
-                numPeople
-            )
-        } catch (_: Exception) {
-            // Analytics failure — log silently, don't disrupt UX
-        }
+            analytics.trackCalculationPerformed(state.selectedCurrency.code, state.tipPercentage.toDouble(), numPeople)
+        } catch (_: Exception) {}
+
+        // Auto-save every calculation
+        autoSave(billAmount, safeTip, safeTotal, numPeople, safePerPerson)
     }
 
     /**
-     * Save current calculation to history.
-     * Free users limited to 5 items.
+     * Auto-save current calculation to history.
+     * Free users: FIFO at 10 — oldest is overwritten, not hard-blocked.
      */
-    fun saveToHistory() {
+    private fun autoSave(billAmount: Double, tipAmount: Double, totalAmount: Double, numPeople: Int, perPersonAmount: Double) {
+        if (billAmount <= 0) return
+
         val state = _uiState.value
-        val billAmount = state.billAmount.toDoubleOrNull() ?: 0.0
-
-        if (billAmount <= 0) {
-            _uiState.update { it.copy(error = "Please enter a bill amount first") }
-            return
-        }
-
-        // Check free tier limit (5 for free users)
-        if (!state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT) {
-            _uiState.update {
-                it.copy(error = "History limit reached. Upgrade to Premium for unlimited history.")
-            }
-            return
-        }
-
         val calculation = TipCalculation(
             billAmount = billAmount,
             tipPercentage = state.tipPercentage.toDouble(),
-            tipAmount = state.tipAmount,
-            totalAmount = state.totalAmount,
-            numPeople = state.numPeople,
-            perPersonAmount = state.perPersonAmount,
+            tipAmount = tipAmount,
+            totalAmount = totalAmount,
+            numPeople = numPeople,
+            perPersonAmount = perPersonAmount,
             currency = state.selectedCurrency.code,
             roundingMode = state.roundingMode,
             timestamp = getCurrentTimeMillis()
         )
 
-        // Persist to database
         viewModelScope.launch {
             try {
-                calculationRepository.saveCalculation(calculation)
-                analytics.trackCalculationSaved(billAmount, state.totalAmount)
-                _uiState.update { it.copy(error = null) }
-
-                // Show interstitial ad every 5 calculations (free tier only)
-                if (!state.isPremium) {
-                    calculationsSinceLastAd++
-                    if (calculationsSinceLastAd >= INTERSTITIAL_AD_FREQUENCY) {
-                        adManager.showInterstitialAd()
-                        calculationsSinceLastAd = 0
-                    }
+                // FIFO: if at limit, delete oldest before saving
+                if (!state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT) {
+                    calculationRepository.keepRecentOnly(FREE_HISTORY_LIMIT - 1)
                 }
+
+                calculationRepository.saveCalculation(calculation)
+                analytics.trackCalculationSaved(billAmount, totalAmount)
+
+                // Show snackbar with count
+                val currentCount = (state.calculationHistory.size + 1).coerceAtMost(FREE_HISTORY_LIMIT)
+                val snackbarMsg = if (state.isPremium) {
+                    "Saved ✓"
+                } else {
+                    "Saved ✓ ($currentCount/$FREE_HISTORY_LIMIT free)"
+                }
+                _uiState.update { it.copy(autoSaveSnackbar = snackbarMsg, error = null) }
+
+                // Ad scaffold: interstitial after 3rd calculation
+                maybeShowInterstitialAd()
+
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Failed to save calculation. Please try again.") }
-                logError("save_calculation_failed", e.message ?: "Unknown error")
+                logError("auto_save_failed", e.message ?: "Unknown error")
             }
         }
     }
@@ -403,14 +413,16 @@ class TipViewModel(
                 dynamicTheme = it.dynamicTheme,
                 calculationHistory = it.calculationHistory,
                 isPremium = it.isPremium,
-                showPremiumSheet = it.showPremiumSheet
+                showPremiumSheet = it.showPremiumSheet,
+                categoryTipDefaults = it.categoryTipDefaults
             )
         }
     }
 
-    /**
-     * Delete a calculation from history.
-     */
+    fun clearAutoSaveSnackbar() {
+        _uiState.update { it.copy(autoSaveSnackbar = null) }
+    }
+
     fun deleteCalculation(id: Long) {
         viewModelScope.launch {
             try {
@@ -422,9 +434,6 @@ class TipViewModel(
         }
     }
 
-    /**
-     * Clear all calculation history.
-     */
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
@@ -436,36 +445,27 @@ class TipViewModel(
         }
     }
 
-    /**
-     * Update default currency preference.
-     */
     fun saveDefaultCurrency(currency: String) {
-        viewModelScope.launch {
-            settingsRepository.updateDefaultCurrency(currency)
-        }
+        viewModelScope.launch { settingsRepository.updateDefaultCurrency(currency) }
     }
 
-    /**
-     * Update default tip percentage preference.
-     */
     fun saveDefaultTipPercentage(percentage: Int) {
-        viewModelScope.launch {
-            settingsRepository.updateDefaultTipPercentage(percentage)
-        }
+        viewModelScope.launch { settingsRepository.updateDefaultTipPercentage(percentage) }
     }
 
-    /**
-     * Update default rounding mode preference.
-     */
     fun saveDefaultRoundingMode(mode: RoundingMode) {
-        viewModelScope.launch {
-            settingsRepository.updateDefaultRoundingMode(mode)
-        }
+        viewModelScope.launch { settingsRepository.updateDefaultRoundingMode(mode) }
     }
 
     /**
-     * Update premium status (after IAP purchase).
+     * Save per-category default tip percentage (premium feature).
      */
+    fun saveCategoryTipDefault(serviceType: ServiceType, percentage: Int) {
+        viewModelScope.launch {
+            settingsRepository.updateCategoryTipDefault(serviceType, percentage)
+        }
+    }
+
     fun setPremiumStatus(isPremium: Boolean) {
         viewModelScope.launch {
             settingsRepository.setPremium(isPremium)
@@ -473,56 +473,35 @@ class TipViewModel(
         }
     }
 
-    /**
-     * Launch the IAP purchase flow for premium with loading state and error handling.
-     */
     fun purchasePremium() {
         _uiState.update { it.copy(isPurchaseLoading = true, iapError = null) }
         analytics.trackPremiumViewed("purchase_button")
         try {
             iapManager.launchPurchaseFlow(IAPProducts.PREMIUM_UNLOCK)
         } catch (e: Exception) {
-            _uiState.update {
-                it.copy(
-                    isPurchaseLoading = false,
-                    iapError = "Purchase failed. Please try again."
-                )
-            }
+            _uiState.update { it.copy(isPurchaseLoading = false, iapError = "Purchase failed. Please try again.") }
             logError("iap_purchase_failed", e.message ?: "Unknown error")
         }
-        // Loading state will be cleared when IAP status flow emits
         viewModelScope.launch {
             delay(IAP_TIMEOUT_MS)
-            // If still loading after timeout, clear the spinner
             if (_uiState.value.isPurchaseLoading) {
                 _uiState.update { it.copy(isPurchaseLoading = false) }
             }
         }
     }
 
-    /**
-     * Retry a failed IAP purchase.
-     */
     fun retryPurchase() {
         _uiState.update { it.copy(iapError = null) }
         purchasePremium()
     }
 
-    /**
-     * Restore previous premium purchases with error handling.
-     */
     fun restorePurchases() {
         _uiState.update { it.copy(isPurchaseLoading = true, iapError = null) }
         try {
             iapManager.restorePurchases()
             analytics.trackPremiumRestored()
         } catch (e: Exception) {
-            _uiState.update {
-                it.copy(
-                    isPurchaseLoading = false,
-                    iapError = "Restore failed. Please try again."
-                )
-            }
+            _uiState.update { it.copy(isPurchaseLoading = false, iapError = "Restore failed. Please try again.") }
             logError("iap_restore_failed", e.message ?: "Unknown error")
         }
         viewModelScope.launch {
@@ -533,9 +512,6 @@ class TipViewModel(
         }
     }
 
-    /**
-     * Unlock premium features for 24 hours (reward ad).
-     */
     fun unlockWithRewardAd() {
         viewModelScope.launch {
             settingsRepository.unlockWithRewardAd()
@@ -543,73 +519,63 @@ class TipViewModel(
         }
     }
 
-    /**
-     * Handle ad load failure — hides ad area and retries once after delay.
-     */
     fun onAdLoadFailed() {
         _uiState.update { it.copy(adLoadFailed = true, isAdLoading = false) }
         logError("ad_load_failed", "Banner ad failed to load")
-
-        // Retry once after 5 seconds
         viewModelScope.launch {
             delay(AD_RETRY_DELAY_MS)
             _uiState.update { it.copy(adLoadFailed = false, isAdLoading = true) }
         }
     }
 
-    /**
-     * Handle successful ad load.
-     */
     fun onAdLoaded() {
         _uiState.update { it.copy(adLoadFailed = false, isAdLoading = false) }
     }
 
-    /**
-     * Show or hide the premium bottom sheet.
-     */
     fun showPremiumSheet(show: Boolean) {
         _uiState.update { it.copy(showPremiumSheet = show, iapError = null) }
         if (show) analytics.trackPremiumViewed("sheet")
     }
 
-    /**
-     * Clear the current error message.
-     */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
 
-    /**
-     * Clear the IAP error message.
-     */
     fun clearIapError() {
         _uiState.update { it.copy(iapError = null) }
     }
 
-    /**
-     * Get calculation history count.
-     */
     fun getHistoryCount(): Int = _uiState.value.calculationHistory.size
 
-    /**
-     * Check if history limit reached (free: 5 max).
-     */
     fun isHistoryLimitReached(): Boolean {
         val state = _uiState.value
         return !state.isPremium && state.calculationHistory.size >= FREE_HISTORY_LIMIT
     }
 
-    private fun logError(type: String, message: String) {
-        try {
-            analytics.trackErrorOccurred(type, message)
-        } catch (_: Exception) {
-            // Analytics itself failed — ignore silently
+    /**
+     * Get the default tip % for the currently selected category.
+     * Returns the per-category default for premium, or global default for free.
+     */
+    fun getDefaultTipForCurrentCategory(): Int {
+        val state = _uiState.value
+        return if (state.isPremium) {
+            state.categoryTipDefaults[state.selectedServiceType] ?: state.tipPercentage
+        } else {
+            state.tipPercentage
         }
     }
 
+    private fun logError(type: String, message: String) {
+        try {
+            analytics.trackErrorOccurred(type, message)
+        } catch (_: Exception) {}
+    }
+
     companion object {
-        const val FREE_HISTORY_LIMIT = 5
-        const val INTERSTITIAL_AD_FREQUENCY = 5
+        const val FREE_HISTORY_LIMIT = 10
+        const val INTERSTITIAL_CALC_THRESHOLD = 3
+        const val MAX_INTERSTITIALS_PER_SESSION = 2
+        const val NATIVE_AD_FREQUENCY = 5
         const val MAX_BILL_AMOUNT = 99_999.99
         const val MIN_BILL_AMOUNT = 0.01
         const val MAX_PEOPLE = 20

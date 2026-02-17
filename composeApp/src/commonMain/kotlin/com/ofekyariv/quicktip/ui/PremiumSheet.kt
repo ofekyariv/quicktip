@@ -80,9 +80,10 @@ fun PremiumSheet(
 
             // Premium features list
             PremiumFeatureItem("Unlimited calculation history")
-            PremiumFeatureItem("Custom tip presets (save favorites)")
+            PremiumFeatureItem("Set Your Own Tip % Buttons")
             PremiumFeatureItem("Export history to CSV")
-            PremiumFeatureItem("No banner ads")
+            PremiumFeatureItem("Per-category default tip percentages")
+            PremiumFeatureItem("No ads — zero ads, forever")
             PremiumFeatureItem("Material You dynamic theming (Android 12+)")
 
             Spacer(modifier = Modifier.height(24.dp))

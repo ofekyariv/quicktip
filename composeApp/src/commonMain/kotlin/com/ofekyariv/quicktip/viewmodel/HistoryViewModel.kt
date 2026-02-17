@@ -38,9 +38,6 @@ class HistoryViewModel(
         trackHistoryView()
     }
 
-    /**
-     * Load calculation history with premium filtering.
-     */
     private fun loadHistory() {
         viewModelScope.launch {
             combine(
@@ -50,7 +47,6 @@ class HistoryViewModel(
                 val isPremiumActive = settings.isPremium || 
                     getCurrentTimeMillis() < settings.rewardAdUnlockExpiry
 
-                // Free tier: limit to 5 most recent
                 val visibleCalculations = if (isPremiumActive) {
                     allCalculations
                 } else {
@@ -59,6 +55,7 @@ class HistoryViewModel(
 
                 HistoryData(
                     calculations = visibleCalculations,
+                    totalCount = allCalculations.size,
                     isPremium = isPremiumActive,
                     isLimitReached = !isPremiumActive && allCalculations.size >= FREE_HISTORY_LIMIT
                 )
@@ -66,6 +63,7 @@ class HistoryViewModel(
                 _uiState.update {
                     it.copy(
                         calculations = data.calculations,
+                        totalCount = data.totalCount,
                         isPremium = data.isPremium,
                         isLimitReached = data.isLimitReached,
                         isLoading = false,
@@ -76,20 +74,12 @@ class HistoryViewModel(
         }
     }
 
-    /**
-     * Track history view event.
-     */
     private fun trackHistoryView() {
         try {
             analytics.trackHistoryViewed(_uiState.value.calculations.size)
-        } catch (_: Exception) {
-            // Analytics failure - ignore silently
-        }
+        } catch (_: Exception) {}
     }
 
-    /**
-     * Delete a calculation by ID.
-     */
     fun deleteCalculation(id: Long) {
         viewModelScope.launch {
             try {
@@ -97,16 +87,11 @@ class HistoryViewModel(
                 analytics.trackHistoryItemDeleted()
                 _uiState.update { it.copy(error = null) }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(error = "Failed to delete calculation. Please try again.")
-                }
+                _uiState.update { it.copy(error = "Failed to delete calculation. Please try again.") }
             }
         }
     }
 
-    /**
-     * Clear all calculation history (with confirmation).
-     */
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
@@ -115,45 +100,30 @@ class HistoryViewModel(
                 _uiState.update { it.copy(error = null, showClearConfirmDialog = false) }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(
-                        error = "Failed to clear history. Please try again.",
-                        showClearConfirmDialog = false
-                    )
+                    it.copy(error = "Failed to clear history. Please try again.", showClearConfirmDialog = false)
                 }
             }
         }
     }
 
-    /**
-     * Show or hide the clear confirmation dialog.
-     */
     fun showClearConfirmDialog(show: Boolean) {
         _uiState.update { it.copy(showClearConfirmDialog = show) }
     }
 
-    /**
-     * Show or hide the premium sheet.
-     */
     fun showPremiumSheet(show: Boolean) {
         _uiState.update { it.copy(showPremiumSheet = show) }
     }
 
-    /**
-     * Get currency info for a calculation.
-     */
     fun getCurrencyInfo(currencyCode: String): CurrencyInfo {
         return getCurrencyByCode(currencyCode) ?: getDefaultCurrency()
     }
 
-    /**
-     * Clear error message.
-     */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
 
     companion object {
-        const val FREE_HISTORY_LIMIT = 5
+        const val FREE_HISTORY_LIMIT = 10
     }
 }
 
@@ -162,6 +132,7 @@ class HistoryViewModel(
  */
 data class HistoryUiState(
     val calculations: List<TipCalculation> = emptyList(),
+    val totalCount: Int = 0,
     val isPremium: Boolean = false,
     val isLimitReached: Boolean = false,
     val isLoading: Boolean = true,
@@ -170,11 +141,9 @@ data class HistoryUiState(
     val error: String? = null
 )
 
-/**
- * Internal data holder for combining flows.
- */
 private data class HistoryData(
     val calculations: List<TipCalculation>,
+    val totalCount: Int,
     val isPremium: Boolean,
     val isLimitReached: Boolean
 )

@@ -5,12 +5,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.ofekyariv.quicktip.ads.AdManager
 import com.ofekyariv.quicktip.data.models.TipCalculation
 import com.ofekyariv.quicktip.viewmodel.HistoryViewModel
+import com.ofekyariv.quicktip.viewmodel.TipViewModel
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,31 +34,24 @@ fun HistoryScreen(
     onPremiumClick: () -> Unit
 ) {
     val viewModel: HistoryViewModel = koinInject()
+    val tipViewModel: TipViewModel = koinInject()
     val adManager: AdManager = koinInject()
     val uiState by viewModel.uiState.collectAsState()
 
-    // Clear confirmation dialog
     if (uiState.showClearConfirmDialog) {
         ClearHistoryConfirmDialog(
-            onConfirm = {
-                viewModel.clearAllHistory()
-            },
-            onDismiss = {
-                viewModel.showClearConfirmDialog(false)
-            }
+            onConfirm = { viewModel.clearAllHistory() },
+            onDismiss = { viewModel.showClearConfirmDialog(false) }
         )
     }
 
-    // Premium bottom sheet
     if (uiState.showPremiumSheet) {
         PremiumSheet(
             onDismiss = { viewModel.showPremiumSheet(false) },
             onPurchase = { /* Handled by TipViewModel via shared state */ },
             onRestore = { /* Handled by TipViewModel via shared state */ },
             onWatchAd = {
-                adManager.showRewardedAd {
-                    // Reward unlocked — handled by shared settings
-                }
+                adManager.showRewardedAd { }
                 viewModel.showPremiumSheet(false)
             },
             isPurchaseLoading = false,
@@ -65,10 +60,18 @@ fun HistoryScreen(
         )
     }
 
+    // Build header title with counter for free users
+    val headerTitle = if (uiState.isPremium) {
+        "📋 History"
+    } else {
+        val count = uiState.totalCount.coerceAtMost(HistoryViewModel.FREE_HISTORY_LIMIT)
+        "📋 History ($count of ${HistoryViewModel.FREE_HISTORY_LIMIT})"
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("History") },
+                title = { Text(headerTitle) },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
@@ -111,7 +114,7 @@ fun HistoryScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Error snackbar-style message
+            // Error message (auto-dismisses after 3s)
             AnimatedVisibility(
                 visible = uiState.error != null,
                 enter = fadeIn() + expandVertically(),
@@ -119,6 +122,10 @@ fun HistoryScreen(
                 modifier = Modifier.align(Alignment.TopCenter)
             ) {
                 uiState.error?.let { errorMsg ->
+                    LaunchedEffect(errorMsg) {
+                        kotlinx.coroutines.delay(3000)
+                        viewModel.clearError()
+                    }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -128,65 +135,69 @@ fun HistoryScreen(
                             containerColor = MaterialTheme.colorScheme.errorContainer
                         )
                     ) {
-                        Row(
+                        Text(
+                            text = errorMsg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = errorMsg,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(onClick = { viewModel.clearError() }) {
-                                Text(
-                                    "Dismiss",
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            }
-                        }
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        )
                     }
                 }
             }
 
-            // Loading state
             if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .semantics { testTag = "loading_indicator" }
                 )
-            }
-            // Empty state
-            else if (uiState.calculations.isEmpty()) {
+            } else if (uiState.calculations.isEmpty()) {
                 EmptyHistoryState(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(32.dp)
                 )
-            }
-            // History list
-            else {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Premium banner (when limit reached)
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Single clean inline message at limit with upgrade CTA (FIFO — not blocking)
                     if (uiState.isLimitReached) {
-                        PremiumBanner(
-                            onUpgradeClick = onPremiumClick,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "History full — oldest entries will be replaced.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { viewModel.showPremiumSheet(true) }) {
+                                    Text("Go Pro")
+                                }
+                            }
+                        }
                     }
 
-                    // Calculation list
+                    // Calculation list with native ad placeholders every 5th entry
                     HistoryList(
                         calculations = uiState.calculations,
                         isPremium = uiState.isPremium,
                         onDeleteCalculation = { viewModel.deleteCalculation(it) },
                         getCurrencyInfo = { viewModel.getCurrencyInfo(it) },
+                        shouldShowNativeAd = { index -> tipViewModel.shouldShowNativeAdAtIndex(index) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -202,6 +213,7 @@ fun HistoryList(
     isPremium: Boolean,
     onDeleteCalculation: (Long) -> Unit,
     getCurrencyInfo: (String) -> com.ofekyariv.quicktip.data.models.CurrencyInfo,
+    shouldShowNativeAd: (Int) -> Boolean = { false },
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -211,10 +223,16 @@ fun HistoryList(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(
+        itemsIndexed(
             items = calculations,
-            key = { it.id }
-        ) { calculation ->
+            key = { _, calc -> calc.id }
+        ) { index, calculation ->
+            // TODO: Ad scaffold — Native ad every 5th history entry
+            // Premium users skip. Replace placeholder with actual native ad view.
+            if (shouldShowNativeAd(index)) {
+                NativeAdPlaceholder()
+            }
+
             val dismissState = rememberSwipeToDismissBoxState(
                 confirmValueChange = { dismissValue ->
                     if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
@@ -261,6 +279,38 @@ fun HistoryList(
     }
 }
 
+/**
+ * TODO: Ad scaffold — Native ad placeholder shown every 5th history entry.
+ * Replace with actual AdMob native ad view when implementing ads.
+ */
+@Composable
+fun NativeAdPlaceholder() {
+    // TODO: Replace with actual native ad rendering (AdMob NativeAdView)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .semantics { testTag = "native_ad_placeholder" },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Ad",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
 @Composable
 fun HistoryItem(
     calculation: TipCalculation,
@@ -278,7 +328,6 @@ fun HistoryItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Date and time
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -299,30 +348,18 @@ fun HistoryItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Calculation details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    HistoryItemRow(
-                        label = "Bill:",
-                        value = calculation.formattedBillAmount(currencyInfo)
-                    )
+                    HistoryItemRow(label = "Bill:", value = calculation.formattedBillAmount(currencyInfo))
                     Spacer(modifier = Modifier.height(4.dp))
-                    HistoryItemRow(
-                        label = "Tip:",
-                        value = calculation.formattedTipAmount(currencyInfo)
-                    )
+                    HistoryItemRow(label = "Tip:", value = calculation.formattedTipAmount(currencyInfo))
                     Spacer(modifier = Modifier.height(4.dp))
-                    HistoryItemRow(
-                        label = "Total:",
-                        value = calculation.formattedTotalAmount(currencyInfo),
-                        highlighted = true
-                    )
+                    HistoryItemRow(label = "Total:", value = calculation.formattedTotalAmount(currencyInfo), highlighted = true)
                 }
 
-                // Per person (if split)
                 if (calculation.numPeople > 1) {
                     Column(
                         horizontalAlignment = Alignment.End,
@@ -384,11 +421,7 @@ fun EmptyHistoryState(modifier: Modifier = Modifier) {
             .semantics { testTag = "empty_state" },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "📜",
-            style = MaterialTheme.typography.displayLarge,
-            textAlign = TextAlign.Center
-        )
+        Text(text = "📜", style = MaterialTheme.typography.displayLarge, textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "No saved calculations yet",
@@ -398,7 +431,7 @@ fun EmptyHistoryState(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Save calculations from the main screen to see them here",
+            text = "Calculations are auto-saved as you use the calculator",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
@@ -420,12 +453,8 @@ fun ClearHistoryConfirmDialog(
                 tint = MaterialTheme.colorScheme.error
             )
         },
-        title = {
-            Text("Clear All History?")
-        },
-        text = {
-            Text("This will permanently delete all your saved calculations. This action cannot be undone.")
-        },
+        title = { Text("Clear All History?") },
+        text = { Text("This will permanently delete all your saved calculations. This action cannot be undone.") },
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
@@ -442,9 +471,4 @@ fun ClearHistoryConfirmDialog(
     )
 }
 
-/**
- * Formats timestamp to human-readable date/time.
- * Example: "Feb 17, 2026"
- * Simple format without time to avoid datetime library dependency.
- */
 expect fun formatTimestamp(timestamp: Long): String

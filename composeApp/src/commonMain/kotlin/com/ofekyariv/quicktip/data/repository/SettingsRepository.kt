@@ -8,8 +8,10 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ofekyariv.quicktip.data.models.RoundingMode
+import com.ofekyariv.quicktip.data.models.ServiceType
 import com.ofekyariv.quicktip.data.models.Settings
 import com.ofekyariv.quicktip.data.models.ThemeMode
+import com.ofekyariv.quicktip.data.models.defaultCategoryTips
 import com.ofekyariv.quicktip.util.getCurrentTimeMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -28,12 +30,20 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val IS_PREMIUM = booleanPreferencesKey("is_premium")
         private val REWARD_AD_UNLOCK_EXPIRY = longPreferencesKey("reward_ad_unlock_expiry")
         private val HISTORY_LIMIT = intPreferencesKey("history_limit")
+        private val CATEGORY_TIP_PREFIX = "category_tip_"
     }
 
     /**
      * Get settings as a Flow (reactive).
      */
     val settings: Flow<Settings> = dataStore.data.map { preferences ->
+        // Load per-category tip defaults
+        val categoryDefaults = defaultCategoryTips().toMutableMap()
+        ServiceType.entries.forEach { serviceType ->
+            val key = intPreferencesKey("$CATEGORY_TIP_PREFIX${serviceType.name}")
+            preferences[key]?.let { categoryDefaults[serviceType] = it }
+        }
+
         Settings(
             defaultCurrency = preferences[DEFAULT_CURRENCY] ?: "USD",
             defaultTipPercentage = preferences[DEFAULT_TIP_PERCENTAGE] ?: 18,
@@ -50,7 +60,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             dynamicTheme = preferences[DYNAMIC_THEME] ?: false,
             isPremium = preferences[IS_PREMIUM] ?: false,
             rewardAdUnlockExpiry = preferences[REWARD_AD_UNLOCK_EXPIRY] ?: 0L,
-            historyLimit = preferences[HISTORY_LIMIT] ?: 5
+            historyLimit = preferences[HISTORY_LIMIT] ?: 10,
+            categoryTipDefaults = categoryDefaults
         )
     }
 
@@ -115,6 +126,16 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val expiryTime = getCurrentTimeMillis() + (24 * 60 * 60 * 1000) // 24 hours
         dataStore.edit { preferences ->
             preferences[REWARD_AD_UNLOCK_EXPIRY] = expiryTime
+        }
+    }
+
+    /**
+     * Update per-category default tip percentage (premium feature).
+     */
+    suspend fun updateCategoryTipDefault(serviceType: ServiceType, percentage: Int) {
+        val key = intPreferencesKey("$CATEGORY_TIP_PREFIX${serviceType.name}")
+        dataStore.edit { preferences ->
+            preferences[key] = percentage
         }
     }
 

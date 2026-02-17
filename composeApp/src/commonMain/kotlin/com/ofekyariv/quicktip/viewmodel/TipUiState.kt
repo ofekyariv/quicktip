@@ -7,6 +7,7 @@ import com.ofekyariv.quicktip.data.models.RoundingMode
 import com.ofekyariv.quicktip.data.models.ServiceType
 import com.ofekyariv.quicktip.data.models.ThemeMode
 import com.ofekyariv.quicktip.data.models.TipCalculation
+import com.ofekyariv.quicktip.data.models.defaultCategoryTips
 
 /**
  * UI state for the tip calculator.
@@ -34,5 +35,9 @@ data class TipUiState(
     val isAdLoading: Boolean = false,
     val adLoadFailed: Boolean = false,
     val error: String? = null,
-    val iapError: String? = null
+    val iapError: String? = null,
+    /** Snackbar message to show after auto-save */
+    val autoSaveSnackbar: String? = null,
+    /** Per-category default tip percentages (premium feature) */
+    val categoryTipDefaults: Map<ServiceType, Int> = defaultCategoryTips()
 )

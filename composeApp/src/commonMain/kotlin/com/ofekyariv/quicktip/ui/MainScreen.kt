@@ -1,6 +1,7 @@
 package com.ofekyariv.quicktip.ui
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -8,6 +9,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -21,7 +24,9 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.ofekyariv.quicktip.ads.AdBannerView
 import com.ofekyariv.quicktip.ads.AdManager
 import com.ofekyariv.quicktip.data.models.RoundingMode
@@ -52,7 +57,20 @@ fun MainScreen(
             onSaveCurrency = { viewModel.saveDefaultCurrency(it) },
             onSaveTipPercentage = { viewModel.saveDefaultTipPercentage(it) },
             onSaveRoundingMode = { viewModel.saveDefaultRoundingMode(it) },
-            onClearHistory = { viewModel.clearAllHistory() }
+            onClearHistory = { viewModel.clearAllHistory() },
+            onDismissPremiumSheet = { viewModel.showPremiumSheet(false) },
+            onPurchasePremium = { viewModel.purchasePremium() },
+            onRestorePurchases = { viewModel.restorePurchases() },
+            onWatchAd = {
+                adManager.showRewardedAd {
+                    viewModel.unlockWithRewardAd()
+                }
+                viewModel.showPremiumSheet(false)
+            },
+            onRetryPurchase = { viewModel.retryPurchase() },
+            onSaveCategoryTipDefault = { serviceType, percentage ->
+                viewModel.saveCategoryTipDefault(serviceType, percentage)
+            }
         )
         return
     }
@@ -75,31 +93,19 @@ fun MainScreen(
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Auto-save snackbar
+    LaunchedEffect(uiState.autoSaveSnackbar) {
+        uiState.autoSaveSnackbar?.let { msg ->
+            snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
+            viewModel.clearAutoSaveSnackbar()
+        }
+    }
+
     Scaffold(
-        floatingActionButton = {
-            // Show history FAB when there are saved calculations
-            if (uiState.calculationHistory.isNotEmpty()) {
-                FloatingActionButton(
-                    onClick = onNavigateToHistory,
-                    modifier = Modifier.semantics { 
-                        contentDescription = "View History"
-                        testTag = "history_fab"
-                    }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = "History"
-                        )
-                        Text("History")
-                    }
-                }
-            }
-        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("QuickTip") },
@@ -139,7 +145,6 @@ fun MainScreen(
             )
         },
         bottomBar = {
-            // Hide banner ads for premium users; hide if ad load failed
             if (!uiState.isPremium && !uiState.adLoadFailed) {
                 AdBannerView()
             }
@@ -153,54 +158,6 @@ fun MainScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Error snackbar-style message
-            AnimatedVisibility(
-                visible = uiState.error != null,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                uiState.error?.let { errorMsg ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp)
-                            .semantics { testTag = "error_card" },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = errorMsg,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(onClick = { viewModel.clearError() }) {
-                                Text(
-                                    "Dismiss",
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Show premium banner when history limit is reached
-            if (!uiState.isPremium && uiState.calculationHistory.size >= TipViewModel.FREE_HISTORY_LIMIT) {
-                PremiumBanner(
-                    onUpgradeClick = { viewModel.showPremiumSheet(true) }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
             // Service Type Selector
@@ -222,11 +179,21 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Tip Percentage Presets
+            // Tip Percentage Presets + "+" button for custom presets
             TipPercentageSelector(
                 selectedPercentage = uiState.tipPercentage,
                 onPercentageChange = { viewModel.updateTipPercentage(it) },
+                isPremium = uiState.isPremium,
+                onCustomPresetClick = { viewModel.showPremiumSheet(true) },
                 modifier = Modifier.fillMaxWidth()
+            )
+
+            // Default for [category]: X% — shown below tip buttons
+            CategoryDefaultTipHint(
+                serviceType = uiState.selectedServiceType,
+                isPremium = uiState.isPremium,
+                categoryTipDefaults = uiState.categoryTipDefaults,
+                globalDefault = uiState.tipPercentage
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -272,34 +239,64 @@ fun MainScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // Action Button — Clear only (Save removed; auto-save is active)
+            OutlinedButton(
+                onClick = { viewModel.clearCalculation() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { testTag = "clear_button" }
             ) {
-                OutlinedButton(
-                    onClick = { viewModel.clearCalculation() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .semantics { testTag = "clear_button" }
-                ) {
-                    Text("Clear")
-                }
+                Text("Clear")
+            }
 
-                Button(
-                    onClick = { viewModel.saveToHistory() },
+            // History button
+            if (uiState.calculationHistory.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onNavigateToHistory,
                     modifier = Modifier
-                        .weight(1f)
-                        .semantics { testTag = "save_button" },
-                    enabled = uiState.billAmount.toDoubleOrNull() != null && uiState.billAmount.toDoubleOrNull()!! > 0
+                        .fillMaxWidth()
+                        .semantics {
+                            contentDescription = "View History"
+                            testTag = "history_button"
+                        }
                 ) {
-                    Text("Save")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("History")
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
+
+/**
+ * Shows "Default for [category]: X%" below tip buttons.
+ */
+@Composable
+fun CategoryDefaultTipHint(
+    serviceType: ServiceType,
+    isPremium: Boolean,
+    categoryTipDefaults: Map<ServiceType, Int>,
+    globalDefault: Int
+) {
+    val defaultTip = if (isPremium) {
+        categoryTipDefaults[serviceType] ?: globalDefault
+    } else {
+        globalDefault
+    }
+    Text(
+        text = "Default for ${serviceType.label}: $defaultTip%",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp)
+    )
 }
 
 @Composable
@@ -357,9 +354,12 @@ fun BillAmountInput(
 fun TipPercentageSelector(
     selectedPercentage: Int,
     onPercentageChange: (Int) -> Unit,
+    isPremium: Boolean = false,
+    onCustomPresetClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showCustomDialog by remember { mutableStateOf(false) }
+    var showCustomPresetExplanation by remember { mutableStateOf(false) }
     val presets = listOf(10, 15, 18, 20, 25)
 
     Column(modifier = modifier) {
@@ -370,12 +370,13 @@ fun TipPercentageSelector(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // Preset chips row
+        // Preset chips row + "+" button for custom presets
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics { testTag = "tip_percentage_chips" },
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             presets.forEach { percentage ->
                 FilterChip(
@@ -386,6 +387,36 @@ fun TipPercentageSelector(
                         .weight(1f)
                         .semantics { testTag = "tip_chip_$percentage" }
                 )
+            }
+
+            // "+" button — Set Your Own Tip % Buttons (premium feature)
+            IconButton(
+                onClick = {
+                    if (isPremium) {
+                        // TODO: Open custom tip preset editor for premium users
+                        showCustomDialog = true
+                    } else {
+                        showCustomPresetExplanation = true
+                    }
+                },
+                modifier = Modifier.semantics {
+                    testTag = "custom_preset_add_button"
+                    contentDescription = "Set Your Own Tip % Buttons"
+                }
+            ) {
+                if (isPremium) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add custom tip preset"
+                    )
+                } else {
+                    // 🔒 icon for non-premium
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Set Your Own Tip % Buttons — Pro feature",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -402,6 +433,7 @@ fun TipPercentageSelector(
             },
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .semantics { testTag = "tip_chip_custom" }
         )
     }
@@ -414,6 +446,32 @@ fun TipPercentageSelector(
             onConfirm = { newPercentage ->
                 onPercentageChange(newPercentage)
                 showCustomDialog = false
+            }
+        )
+    }
+
+    // "Set Your Own Tip % Buttons" explanation dialog for non-premium
+    if (showCustomPresetExplanation) {
+        AlertDialog(
+            onDismissRequest = { showCustomPresetExplanation = false },
+            title = { Text("Set Your Own Tip % Buttons") },
+            text = {
+                Text("Create your own tip buttons — Pro feature\n\nReplace 15/18/20% with your preferred percentages.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCustomPresetExplanation = false
+                        onCustomPresetClick()
+                    }
+                ) {
+                    Text("Unlock Pro")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomPresetExplanation = false }) {
+                    Text("Not Now")
+                }
             }
         )
     }
@@ -593,52 +651,17 @@ fun ResultsCard(
             
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Subtotal
-            ResultRow(
-                label = "Subtotal",
-                amount = billAmount,
-                currency = currency,
-                testTag = "result_subtotal"
-            )
-
+            ResultRow(label = "Subtotal", amount = billAmount, currency = currency, testTag = "result_subtotal")
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Tip
-            ResultRow(
-                label = "Tip",
-                amount = tipAmount,
-                currency = currency,
-                testTag = "result_tip",
-                highlighted = true
-            )
-
+            ResultRow(label = "Tip", amount = tipAmount, currency = currency, testTag = "result_tip", highlighted = true)
             Spacer(modifier = Modifier.height(8.dp))
-
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
-            )
-
+            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
             Spacer(modifier = Modifier.height(8.dp))
+            ResultRow(label = "Total", amount = totalAmount, currency = currency, testTag = "result_total", isTotal = true)
 
-            // Total
-            ResultRow(
-                label = "Total",
-                amount = totalAmount,
-                currency = currency,
-                testTag = "result_total",
-                isTotal = true
-            )
-
-            // Per Person (only show when split > 1)
             if (numPeople > 1) {
                 Spacer(modifier = Modifier.height(12.dp))
-                ResultRow(
-                    label = "Per Person",
-                    amount = perPersonAmount,
-                    currency = currency,
-                    testTag = "result_per_person",
-                    highlighted = true
-                )
+                ResultRow(label = "Per Person", amount = perPersonAmount, currency = currency, testTag = "result_per_person", highlighted = true)
             }
         }
     }
@@ -689,122 +712,69 @@ fun ServiceTypeSelector(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // First row: Restaurant, Taxi, Salon
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics { testTag = "service_type_row_1" },
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
-                selected = selectedServiceType == ServiceType.RESTAURANT,
-                onClick = { onServiceTypeChange(ServiceType.RESTAURANT) },
-                label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ServiceType.RESTAURANT.emoji)
-                        Text(ServiceType.RESTAURANT.label, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { testTag = "service_chip_restaurant" }
-            )
-            FilterChip(
-                selected = selectedServiceType == ServiceType.TAXI,
-                onClick = { onServiceTypeChange(ServiceType.TAXI) },
-                label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ServiceType.TAXI.emoji)
-                        Text(ServiceType.TAXI.label, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { testTag = "service_chip_taxi" }
-            )
-            FilterChip(
-                selected = selectedServiceType == ServiceType.SALON,
-                onClick = { onServiceTypeChange(ServiceType.SALON) },
-                label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ServiceType.SALON.emoji)
-                        Text(ServiceType.SALON.label, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { testTag = "service_chip_salon" }
-            )
+            ServiceChip(ServiceType.RESTAURANT, selectedServiceType, onServiceTypeChange, Modifier.weight(1f))
+            ServiceChip(ServiceType.TAXI, selectedServiceType, onServiceTypeChange, Modifier.weight(1f))
+            ServiceChip(ServiceType.SALON, selectedServiceType, onServiceTypeChange, Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Second row: Hotel, Delivery, Counter
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics { testTag = "service_type_row_2" },
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
-                selected = selectedServiceType == ServiceType.HOTEL,
-                onClick = { onServiceTypeChange(ServiceType.HOTEL) },
-                label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ServiceType.HOTEL.emoji)
-                        Text(ServiceType.HOTEL.label, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { testTag = "service_chip_hotel" }
-            )
-            FilterChip(
-                selected = selectedServiceType == ServiceType.DELIVERY,
-                onClick = { onServiceTypeChange(ServiceType.DELIVERY) },
-                label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ServiceType.DELIVERY.emoji)
-                        Text(ServiceType.DELIVERY.label, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { testTag = "service_chip_delivery" }
-            )
-            FilterChip(
-                selected = selectedServiceType == ServiceType.COUNTER,
-                onClick = { onServiceTypeChange(ServiceType.COUNTER) },
-                label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ServiceType.COUNTER.emoji)
-                        Text(ServiceType.COUNTER.label, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { testTag = "service_chip_counter" }
-            )
+            ServiceChip(ServiceType.HOTEL, selectedServiceType, onServiceTypeChange, Modifier.weight(1f))
+            ServiceChip(ServiceType.DELIVERY, selectedServiceType, onServiceTypeChange, Modifier.weight(1f))
+            ServiceChip(ServiceType.COUNTER, selectedServiceType, onServiceTypeChange, Modifier.weight(1f))
         }
     }
+}
+
+@Composable
+fun ServiceChip(
+    serviceType: ServiceType,
+    selectedServiceType: ServiceType,
+    onServiceTypeChange: (ServiceType) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isSelected = selectedServiceType == serviceType
+    FilterChip(
+        selected = isSelected,
+        onClick = { onServiceTypeChange(serviceType) },
+        label = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(serviceType.emoji)
+                Text(serviceType.label, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        border = if (isSelected) {
+            FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = true,
+                selectedBorderColor = MaterialTheme.colorScheme.primary,
+                selectedBorderWidth = 2.dp
+            )
+        } else {
+            FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = false
+            )
+        },
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .semantics { testTag = "service_chip_${serviceType.name.lowercase()}" }
+    )
 }
 
 @Composable
@@ -824,15 +794,11 @@ fun CountryEtiquetteCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header: Flag + Country Name
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = countryTipInfo.flag,
-                    style = MaterialTheme.typography.headlineMedium
-                )
+                Text(text = countryTipInfo.flag, style = MaterialTheme.typography.headlineMedium)
                 Text(
                     text = countryTipInfo.countryName,
                     style = MaterialTheme.typography.titleMedium,
@@ -842,7 +808,6 @@ fun CountryEtiquetteCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tipping Culture
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -868,7 +833,6 @@ fun CountryEtiquetteCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Service Type Specific Tip Range
             val tipRange = countryTipInfo.formatTipRange(serviceType)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -887,7 +851,6 @@ fun CountryEtiquetteCard(
                 )
             }
 
-            // Notes (if not empty)
             if (countryTipInfo.notes.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -901,9 +864,6 @@ fun CountryEtiquetteCard(
     }
 }
 
-/**
- * Format amount to 2 decimal places (KMP-compatible).
- */
 private fun formatAmount(amount: Double): String {
     val rounded = (amount * 100).toLong() / 100.0
     val wholePart = rounded.toLong()

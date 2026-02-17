@@ -8,7 +8,7 @@ enum class ServiceType(val emoji: String, val label: String) {
     RESTAURANT("🍽️", "Restaurant"),
     
     /** Taxi, rideshare, car service */
-    TAXI("🚕", "Taxi/Rideshare"),
+    TAXI("🚕", "Taxi"),
     
     /** Hair salon, barber, spa, beauty services */
     SALON("💇", "Hair/Salon"),

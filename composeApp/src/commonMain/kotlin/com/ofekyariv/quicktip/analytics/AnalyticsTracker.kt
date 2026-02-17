@@ -40,7 +40,7 @@ fun AnalyticsTracker.trackPremiumViewed(source: String) {
     ))
 }
 
-fun AnalyticsTracker.trackPremiumPurchased(price: Double = 0.99) {
+fun AnalyticsTracker.trackPremiumPurchased(price: Double = 1.99) {
     logEvent("premium_purchased", mapOf(
         "value" to price,
         "currency" to "USD"
