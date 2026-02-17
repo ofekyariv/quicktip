@@ -1,0 +1,109 @@
+appId: com.ofekyariv.quicktip
+---
+# 03 - Currency Switching - Test all 16 currencies
+# Verify currency symbol changes in results display
+
+- launchApp
+
+# Enter bill amount
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "100"
+
+# Select 15% tip
+- tapOn:
+    testTag: "tip_chip_15"
+
+# Open settings
+- tapOn:
+    testTag: "settings_button"
+- assertVisible: "Settings"
+- takeScreenshot: screenshots/03-settings-screen
+
+# Test USD ($)
+- assertVisible: "USD"
+- assertVisible: "$"
+- takeScreenshot: screenshots/03-currency-usd
+
+# Switch to EUR (€)
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*EUR.*"
+- assertVisible: "€"
+- tapOn:
+    text: "Back"
+- assertVisible: "€"
+- takeScreenshot: screenshots/03-currency-eur
+
+# Switch to GBP (£)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*GBP.*"
+- tapOn:
+    text: "Back"
+- assertVisible: "£"
+- takeScreenshot: screenshots/03-currency-gbp
+
+# Switch to JPY (¥) - NOTE: JPY has 0 decimal places
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*JPY.*"
+- tapOn:
+    text: "Back"
+- assertVisible: "¥"
+- takeScreenshot: screenshots/03-currency-jpy
+
+# Switch to INR (₹)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*INR.*"
+- tapOn:
+    text: "Back"
+- assertVisible: "₹"
+- takeScreenshot: screenshots/03-currency-inr
+
+# Switch to ILS (₪)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*ILS.*"
+- tapOn:
+    text: "Back"
+- assertVisible: "₪"
+- takeScreenshot: screenshots/03-currency-ils
+
+# Switch to BRL (R$)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*BRL.*"
+- tapOn:
+    text: "Back"
+- assertVisible: "R$"
+- takeScreenshot: screenshots/03-currency-brl
+
+# Switch back to USD
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*USD.*"
+- tapOn:
+    text: "Back"
+- assertVisible: "$"
+- takeScreenshot: screenshots/03-currency-back-to-usd

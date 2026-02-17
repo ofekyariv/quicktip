@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">全球智能小费计算器</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">账单金额</string>
+    <string name="tip_percentage">小费百分比</string>
+    <string name="split_between">分摊人数</string>
+    <string name="per_person">每人</string>
+    <string name="breakdown">明细</string>
+    <string name="subtotal">小计</string>
+    <string name="tip">小费</string>
+    <string name="total">总计</string>
+    <string name="save_to_history">保存到历史记录</string>
+    
+    <!-- Settings -->
+    <string name="settings">设置</string>
+    <string name="currency">货币</string>
+    <string name="region">地区</string>
+    <string name="rounding_mode">舍入模式</string>
+    <string name="theme">主题</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">解锁高级版</string>
+    <string name="premium_features">高级功能</string>
+    
+    <!-- Common -->
+    <string name="back">返回</string>
+    <string name="cancel">取消</string>
+    <string name="ok">确定</string>
+</resources>

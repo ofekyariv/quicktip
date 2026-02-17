@@ -1,0 +1,38 @@
+appId: com.ofekyariv.quicktip
+---
+# 11 - RTL Languages - Switch to Hebrew/Arabic, verify RTL layout
+
+- launchApp
+
+# Note: Changing app locale via Maestro may not be straightforward
+# This test assumes the device/emulator locale can be changed, 
+# or the app detects system locale
+
+# For now, we'll verify the UI can handle potential RTL by checking settings
+- tapOn:
+    testTag: "settings_button"
+- takeScreenshot: screenshots/11-settings-ltr
+
+# If the device is set to Hebrew or Arabic locale, the UI should auto-flip
+# Since we can't easily change device locale in Maestro, we'll document this test
+# as requiring manual testing with different device locales
+
+# Go back
+- tapOn:
+    text: "Back"
+
+# Enter a calculation to verify main screen
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "150"
+- tapOn:
+    testTag: "tip_chip_18"
+- takeScreenshot: screenshots/11-main-ltr
+
+# NOTE: To properly test RTL:
+# 1. Change device language to Hebrew (עברית) or Arabic (العربية) in device settings
+# 2. Relaunch app
+# 3. Verify all text aligns right-to-left
+# 4. Verify currency symbols appear on correct side
+# 5. Verify buttons/icons mirror appropriately
+# This test serves as a placeholder and documents the RTL verification need

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">Intelligenter Trinkgeldrechner Weltweit</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">Rechnungsbetrag</string>
+    <string name="tip_percentage">Trinkgeldprozentsatz</string>
+    <string name="split_between">Aufteilen Zwischen</string>
+    <string name="per_person">Pro Person</string>
+    <string name="breakdown">Aufschlüsselung</string>
+    <string name="subtotal">Zwischensumme</string>
+    <string name="tip">Trinkgeld</string>
+    <string name="total">Gesamt</string>
+    <string name="save_to_history">Im Verlauf Speichern</string>
+    
+    <!-- Settings -->
+    <string name="settings">Einstellungen</string>
+    <string name="currency">Währung</string>
+    <string name="region">Region</string>
+    <string name="rounding_mode">Rundungsmodus</string>
+    <string name="theme">Design</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">Premium Freischalten</string>
+    <string name="premium_features">Premium-Funktionen</string>
+    
+    <!-- Common -->
+    <string name="back">Zurück</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="ok">OK</string>
+</resources>

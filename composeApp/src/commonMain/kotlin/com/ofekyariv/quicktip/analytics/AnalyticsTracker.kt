@@ -114,6 +114,10 @@ fun AnalyticsTracker.trackCalculationDeleted() {
     logEvent("calculation_deleted", emptyMap())
 }
 
+fun AnalyticsTracker.trackHistoryItemDeleted() {
+    logEvent("history_item_deleted", emptyMap())
+}
+
 fun AnalyticsTracker.trackErrorOccurred(errorType: String, errorMessage: String) {
     logEvent("error_occurred", mapOf(
         "error_type" to errorType,

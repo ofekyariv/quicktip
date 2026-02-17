@@ -1,0 +1,88 @@
+appId: com.ofekyariv.quicktip
+---
+# 08 - History - Save multiple calculations, verify free tier limit (5)
+
+- launchApp
+
+# Clear any existing history first (if possible)
+# For now, we'll just save new calculations
+
+# Calculation 1: $50 + 15%
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "50"
+- tapOn:
+    testTag: "tip_chip_15"
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/08-saved-calc-1
+
+# Calculation 2: $75 + 18%
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "75"
+- tapOn:
+    testTag: "tip_chip_18"
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/08-saved-calc-2
+
+# Calculation 3: $100 + 20%
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "100"
+- tapOn:
+    testTag: "tip_chip_20"
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/08-saved-calc-3
+
+# Calculation 4: $125 + 25%
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "125"
+- tapOn:
+    testTag: "tip_chip_25"
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/08-saved-calc-4
+
+# Calculation 5: $150 + 15%
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "150"
+- tapOn:
+    testTag: "tip_chip_15"
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/08-saved-calc-5
+
+# After 5 calculations, premium banner should appear
+- assertVisible:
+    text: ".*Premium.*|.*Upgrade.*|.*history.*"
+- takeScreenshot: screenshots/08-free-tier-limit-banner
+
+# Calculation 6: This should still save, but only last 5 are shown
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "200"
+- tapOn:
+    testTag: "tip_chip_20"
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/08-saved-calc-6
+
+# Verify premium banner is still visible
+- assertVisible:
+    text: ".*Premium.*|.*Upgrade.*"
+- takeScreenshot: screenshots/08-after-limit

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">세계 스마트 팁 계산기</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">계산서 금액</string>
+    <string name="tip_percentage">팁 비율</string>
+    <string name="split_between">분할 인원</string>
+    <string name="per_person">1인당</string>
+    <string name="breakdown">내역</string>
+    <string name="subtotal">소계</string>
+    <string name="tip">팁</string>
+    <string name="total">합계</string>
+    <string name="save_to_history">기록에 저장</string>
+    
+    <!-- Settings -->
+    <string name="settings">설정</string>
+    <string name="currency">통화</string>
+    <string name="region">지역</string>
+    <string name="rounding_mode">반올림 모드</string>
+    <string name="theme">테마</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">프리미엄 잠금 해제</string>
+    <string name="premium_features">프리미엄 기능</string>
+    
+    <!-- Common -->
+    <string name="back">뒤로</string>
+    <string name="cancel">취소</string>
+    <string name="ok">확인</string>
+</resources>

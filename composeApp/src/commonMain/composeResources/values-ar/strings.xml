@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">حاسبة الإكرامية الذكية العالمية</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">مبلغ الفاتورة</string>
+    <string name="tip_percentage">نسبة الإكرامية</string>
+    <string name="split_between">التقسيم بين</string>
+    <string name="per_person">للشخص الواحد</string>
+    <string name="breakdown">التفصيل</string>
+    <string name="subtotal">المجموع الفرعي</string>
+    <string name="tip">الإكرامية</string>
+    <string name="total">المجموع</string>
+    <string name="save_to_history">حفظ في السجل</string>
+    
+    <!-- Settings -->
+    <string name="settings">الإعدادات</string>
+    <string name="currency">العملة</string>
+    <string name="region">المنطقة</string>
+    <string name="rounding_mode">وضع التقريب</string>
+    <string name="theme">السمة</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">فتح النسخة المميزة</string>
+    <string name="premium_features">الميزات المميزة</string>
+    
+    <!-- Common -->
+    <string name="back">رجوع</string>
+    <string name="cancel">إلغاء</string>
+    <string name="ok">موافق</string>
+</resources>

@@ -1,0 +1,131 @@
+appId: com.ofekyariv.quicktip
+---
+# 10 - Edge Cases - JPY (0 decimals), very large bills, 99 people split, rapid tapping
+
+- launchApp
+
+# Test JPY currency (0 decimal places)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*JPY.*"
+- tapOn:
+    text: "Back"
+- takeScreenshot: screenshots/10-jpy-selected
+
+# Enter amount in JPY (no decimals)
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "10000"
+- tapOn:
+    testTag: "tip_chip_15"
+# Should show ¥10000, ¥1500, ¥11500 (no decimal points)
+- assertVisible: "¥"
+- assertVisible: "10000"
+- takeScreenshot: screenshots/10-jpy-calculation
+
+# Very large bill ($999,999.99)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*USD.*"
+- tapOn:
+    text: "Back"
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "999999.99"
+- tapOn:
+    testTag: "tip_chip_20"
+# Should calculate: tip = $199,999.99, total = $1,199,999.99
+- assertVisible: "999999"
+- takeScreenshot: screenshots/10-huge-bill
+
+# Split between 99 people (max edge case)
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+# Continue tapping to reach high number (simulating to ~20)
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- takeScreenshot: screenshots/10-split-many-people
+
+# Rapid button tapping (stress test)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "100"
+- tapOn:
+    testTag: "tip_chip_10"
+- tapOn:
+    testTag: "tip_chip_15"
+- tapOn:
+    testTag: "tip_chip_18"
+- tapOn:
+    testTag: "tip_chip_20"
+- tapOn:
+    testTag: "tip_chip_25"
+- tapOn:
+    testTag: "tip_chip_10"
+- tapOn:
+    testTag: "tip_chip_20"
+# Rapid split button taps
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_decrease"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_decrease"
+- tapOn:
+    testTag: "split_decrease"
+- takeScreenshot: screenshots/10-rapid-tapping
+
+# Verify app is still functional
+- assertVisible: "QuickTip"
+- assertVisible:
+    testTag: "results_card"

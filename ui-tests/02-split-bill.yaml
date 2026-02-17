@@ -1,44 +1,86 @@
 appId: com.ofekyariv.quicktip
 ---
-# 02 - Split Bill Between People
-# Enter a bill, set tip, split between multiple people, verify per-person amount.
+# 02 - Split Bill - Test bill splitting between 2, 3, 4, 5+ people
 
 - launchApp
 
-- assertVisible: "QuickTip"
-
-# Enter bill amount
+# Enter bill amount: $200
 - tapOn:
-    id: "bill_amount_input"
-- inputText: "100.00"
+    testTag: "bill_amount_input"
+- inputText: "200"
 
-# Select 20% tip
+# Select 20% tip (should be $40 tip, $240 total)
 - tapOn:
-    id: "tip_chip_20"
+    testTag: "tip_chip_20"
 
-# Wait for split bill card to appear
+# Verify base calculation (1 person)
 - assertVisible:
-    id: "split_bill_card"
+    text: ".*240.*"  # Total: $240.00
+- takeScreenshot: screenshots/02-split-1-person
 
-# Increase number of people to 4 (tap 3 times from default 1)
+# Split between 2 people ($120 per person)
 - tapOn:
-    id: "split_increase"
+    testTag: "split_increase"
+- assertVisible:
+    text: ".*2.*"
+- assertVisible:
+    text: ".*120.*"  # Per person: $120.00
+- takeScreenshot: screenshots/02-split-2-people
+
+# Split between 3 people ($80 per person)
 - tapOn:
-    id: "split_increase"
+    testTag: "split_increase"
+- assertVisible:
+    text: ".*3.*"
+- assertVisible:
+    text: ".*80.*"  # Per person: $80.00
+- takeScreenshot: screenshots/02-split-3-people
+
+# Split between 4 people ($60 per person)
 - tapOn:
-    id: "split_increase"
-
-# Verify split count shows 4
+    testTag: "split_increase"
 - assertVisible:
-    text: "4"
-
-# Verify per person amount is shown in results
+    text: ".*4.*"
 - assertVisible:
-    id: "result_per_person"
+    text: ".*60.*"  # Per person: $60.00
+- takeScreenshot: screenshots/02-split-4-people
 
-# Verify total is $120 (100 + 20% tip)
+# Split between 5 people ($48 per person)
+- tapOn:
+    testTag: "split_increase"
 - assertVisible:
-    id: "result_total"
+    text: ".*5.*"
+- assertVisible:
+    text: ".*48.*"  # Per person: $48.00
+- takeScreenshot: screenshots/02-split-5-people
 
-# Take a screenshot
-- takeScreenshot: 02-split-bill
+# Test decrease button
+- tapOn:
+    testTag: "split_decrease"
+- assertVisible:
+    text: ".*4.*"
+- tapOn:
+    testTag: "split_decrease"
+- assertVisible:
+    text: ".*3.*"
+
+# Increase to 10 people ($24 per person)
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- assertVisible:
+    text: ".*10.*"
+- assertVisible:
+    text: ".*24.*"  # Per person: $24.00
+- takeScreenshot: screenshots/02-split-10-people

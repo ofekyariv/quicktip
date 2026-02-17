@@ -1,0 +1,59 @@
+appId: com.ofekyariv.quicktip
+---
+# 04 - Theme Switching - Test Light/Dark/System themes
+
+- launchApp
+- takeScreenshot: screenshots/04-initial-theme
+
+# Open settings
+- tapOn:
+    testTag: "settings_button"
+- assertVisible: "Settings"
+- assertVisible: "Theme"
+
+# Take screenshot of settings in initial theme
+- takeScreenshot: screenshots/04-settings-initial
+
+# Switch to Light theme
+- tapOn:
+    text: "Light"
+- assertVisible: "Light"
+- takeScreenshot: screenshots/04-theme-light-settings
+
+# Go back to main screen to see light theme
+- tapOn:
+    text: "Back"
+- assertVisible: "QuickTip"
+- takeScreenshot: screenshots/04-theme-light-main
+
+# Open settings again
+- tapOn:
+    testTag: "settings_button"
+
+# Switch to Dark theme
+- tapOn:
+    text: "Dark"
+- assertVisible: "Dark"
+- takeScreenshot: screenshots/04-theme-dark-settings
+
+# Go back to main screen to see dark theme
+- tapOn:
+    text: "Back"
+- assertVisible: "QuickTip"
+- takeScreenshot: screenshots/04-theme-dark-main
+
+# Open settings again
+- tapOn:
+    testTag: "settings_button"
+
+# Switch to System theme
+- tapOn:
+    text: "System"
+- assertVisible: "System"
+- takeScreenshot: screenshots/04-theme-system-settings
+
+# Go back to main screen
+- tapOn:
+    text: "Back"
+- assertVisible: "QuickTip"
+- takeScreenshot: screenshots/04-theme-system-main

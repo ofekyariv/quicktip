@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">Calculadora Inteligente de Propinas Mundial</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">Monto de la Cuenta</string>
+    <string name="tip_percentage">Porcentaje de Propina</string>
+    <string name="split_between">Dividir Entre</string>
+    <string name="per_person">Por Persona</string>
+    <string name="breakdown">Desglose</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="tip">Propina</string>
+    <string name="total">Total</string>
+    <string name="save_to_history">Guardar en Historial</string>
+    
+    <!-- Settings -->
+    <string name="settings">Configuración</string>
+    <string name="currency">Moneda</string>
+    <string name="region">Región</string>
+    <string name="rounding_mode">Modo de Redondeo</string>
+    <string name="theme">Tema</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">Desbloquear Premium</string>
+    <string name="premium_features">Funciones Premium</string>
+    
+    <!-- Common -->
+    <string name="back">Atrás</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">Aceptar</string>
+</resources>

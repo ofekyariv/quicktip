@@ -1,0 +1,63 @@
+appId: com.ofekyariv.quicktip
+---
+# 07 - Premium Flow - Open premium sheet, verify features, dismiss
+
+- launchApp
+
+# Tap premium button (star icon in top bar)
+- tapOn:
+    testTag: "premium_button"
+
+# Verify premium sheet is displayed
+- assertVisible: "Unlock Premium"
+- assertVisible: "Get the most out of QuickTip"
+- takeScreenshot: screenshots/07-premium-sheet
+
+# Verify all premium features are listed
+- assertVisible: "Unlimited calculation history"
+- assertVisible: "Custom tip presets"
+- assertVisible: "Export history to CSV"
+- assertVisible: "No banner ads"
+- assertVisible: "Material You dynamic theming"
+
+# Verify purchase button exists
+- assertVisible:
+    text: ".*Unlock Forever.*"
+- takeScreenshot: screenshots/07-premium-features
+
+# Verify watch ad option exists
+- assertVisible: "Watch Ad — Try 24h Free"
+
+# Verify restore purchases option exists
+- assertVisible: "Restore Purchases"
+- takeScreenshot: screenshots/07-premium-options
+
+# Dismiss the sheet (swipe down or tap outside)
+- swipe:
+    direction: DOWN
+    startPoint: 50%,80%
+    endPoint: 50%,100%
+
+# Verify we're back on main screen
+- assertVisible: "QuickTip"
+- takeScreenshot: screenshots/07-dismissed
+
+# Open premium sheet from settings
+- tapOn:
+    testTag: "settings_button"
+- assertVisible: "Premium Status"
+- assertVisible: "Free tier — tap to upgrade"
+- tapOn:
+    text: "Unlock Premium"
+
+# Should show premium sheet again
+- assertVisible: "Unlock Premium"
+- takeScreenshot: screenshots/07-premium-from-settings
+
+# Dismiss again
+- swipe:
+    direction: DOWN
+    startPoint: 50%,80%
+    endPoint: 50%,100%
+- tapOn:
+    text: "Back"

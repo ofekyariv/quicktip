@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">विश्वव्यापी स्मार्ट टिप कैलकुलेटर</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">बिल राशि</string>
+    <string name="tip_percentage">टिप प्रतिशत</string>
+    <string name="split_between">विभाजन</string>
+    <string name="per_person">प्रति व्यक्ति</string>
+    <string name="breakdown">विवरण</string>
+    <string name="subtotal">उप-योग</string>
+    <string name="tip">टिप</string>
+    <string name="total">कुल</string>
+    <string name="save_to_history">इतिहास में सहेजें</string>
+    
+    <!-- Settings -->
+    <string name="settings">सेटिंग्स</string>
+    <string name="currency">मुद्रा</string>
+    <string name="region">क्षेत्र</string>
+    <string name="rounding_mode">राउंडिंग मोड</string>
+    <string name="theme">थीम</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">प्रीमियम अनलॉक करें</string>
+    <string name="premium_features">प्रीमियम सुविधाएँ</string>
+    
+    <!-- Common -->
+    <string name="back">वापस</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="ok">ठीक है</string>
+</resources>

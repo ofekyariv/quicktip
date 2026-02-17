@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -29,7 +30,9 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onNavigateToHistory: () -> Unit = {}
+) {
     val viewModel: TipViewModel = koinInject()
     val adManager: AdManager = koinInject()
     val uiState by viewModel.uiState.collectAsState()
@@ -71,6 +74,30 @@ fun MainScreen() {
     }
 
     Scaffold(
+        floatingActionButton = {
+            // Show history FAB when there are saved calculations
+            if (uiState.calculationHistory.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = onNavigateToHistory,
+                    modifier = Modifier.semantics { 
+                        contentDescription = "View History"
+                        testTag = "history_fab"
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.List,
+                            contentDescription = "History"
+                        )
+                        Text("History")
+                    }
+                }
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text("QuickTip") },
@@ -619,10 +646,20 @@ fun ResultRow(
                    else MaterialTheme.colorScheme.onPrimaryContainer
         )
         Text(
-            text = "${currency.symbol}${String.format("%.2f", amount)}",
+            text = currency.format(amount),
             style = if (isTotal) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleMedium,
             color = if (highlighted) MaterialTheme.colorScheme.primary 
                    else MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
+}
+
+/**
+ * Format amount to 2 decimal places (KMP-compatible).
+ */
+private fun formatAmount(amount: Double): String {
+    val rounded = (amount * 100).toLong() / 100.0
+    val wholePart = rounded.toLong()
+    val decimalPart = ((rounded - wholePart) * 100).toInt()
+    return "$wholePart.${decimalPart.toString().padStart(2, '0')}"
 }

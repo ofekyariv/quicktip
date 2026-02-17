@@ -1,0 +1,101 @@
+appId: com.ofekyariv.quicktip
+---
+# 12 - Full User Journey - Complete flow from open to save
+
+- launchApp
+- takeScreenshot: screenshots/12-01-launch
+
+# Step 1: View initial state
+- assertVisible: "QuickTip"
+- assertVisible: "Bill Amount"
+- assertVisible: "Tip Percentage"
+- takeScreenshot: screenshots/12-02-initial-state
+
+# Step 2: Enter bill amount
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "85.50"
+- takeScreenshot: screenshots/12-03-amount-entered
+
+# Step 3: Select tip percentage (18%)
+- tapOn:
+    testTag: "tip_chip_18"
+- assertVisible: "Results"
+- takeScreenshot: screenshots/12-04-tip-selected
+
+# Step 4: Split bill between 3 people
+- tapOn:
+    testTag: "split_increase"
+- tapOn:
+    testTag: "split_increase"
+- assertVisible: "3"
+- takeScreenshot: screenshots/12-05-split-bill
+
+# Step 5: Enable rounding
+- tapOn:
+    testTag: "rounding_switch"
+- takeScreenshot: screenshots/12-06-rounding-enabled
+
+# Step 6: Save calculation
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/12-07-saved
+
+# Step 7: Change currency to EUR
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*EUR.*"
+- assertVisible: "€"
+- takeScreenshot: screenshots/12-08-currency-changed
+
+# Step 8: Change theme to Dark
+- tapOn:
+    text: "Dark"
+- takeScreenshot: screenshots/12-09-dark-theme
+
+# Step 9: View premium features
+- tapOn:
+    text: "Unlock Premium"
+- assertVisible: "Unlock Premium"
+- assertVisible: "Unlimited calculation history"
+- takeScreenshot: screenshots/12-10-premium-sheet
+
+# Step 10: Dismiss premium and go back
+- swipe:
+    direction: DOWN
+    startPoint: 50%,80%
+    endPoint: 50%,100%
+- tapOn:
+    text: "Back"
+- takeScreenshot: screenshots/12-11-back-to-main
+
+# Step 11: Perform another calculation
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "120"
+- tapOn:
+    testTag: "tip_chip_20"
+- assertVisible: "€"
+- takeScreenshot: screenshots/12-12-new-calculation
+
+# Step 12: Save second calculation
+- tapOn:
+    testTag: "save_button"
+- takeScreenshot: screenshots/12-13-second-saved
+
+# Step 13: Clear and verify reset
+- tapOn:
+    testTag: "clear_button"
+- takeScreenshot: screenshots/12-14-cleared
+
+# Step 14: Final state verification
+- assertVisible: "QuickTip"
+- assertVisible: "€"
+- takeScreenshot: screenshots/12-15-final-state
+
+# Complete journey verified

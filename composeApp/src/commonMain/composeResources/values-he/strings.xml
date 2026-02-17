@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">מחשבון טיפים חכם עולמי</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">סכום החשבון</string>
+    <string name="tip_percentage">אחוז טיפ</string>
+    <string name="split_between">חלוקה בין</string>
+    <string name="per_person">לאדם</string>
+    <string name="breakdown">פירוט</string>
+    <string name="subtotal">סכום ביניים</string>
+    <string name="tip">טיפ</string>
+    <string name="total">סה״כ</string>
+    <string name="save_to_history">שמירה להיסטוריה</string>
+    
+    <!-- Settings -->
+    <string name="settings">הגדרות</string>
+    <string name="currency">מטבע</string>
+    <string name="region">אזור</string>
+    <string name="rounding_mode">מצב עיגול</string>
+    <string name="theme">ערכת נושא</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">שחרר פרימיום</string>
+    <string name="premium_features">תכונות פרימיום</string>
+    
+    <!-- Common -->
+    <string name="back">חזור</string>
+    <string name="cancel">ביטול</string>
+    <string name="ok">אישור</string>
+</resources>

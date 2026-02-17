@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">Calcolatore Intelligente di Mancia Mondiale</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">Importo del Conto</string>
+    <string name="tip_percentage">Percentuale di Mancia</string>
+    <string name="split_between">Dividi Tra</string>
+    <string name="per_person">Per Persona</string>
+    <string name="breakdown">Riepilogo</string>
+    <string name="subtotal">Subtotale</string>
+    <string name="tip">Mancia</string>
+    <string name="total">Totale</string>
+    <string name="save_to_history">Salva nella Cronologia</string>
+    
+    <!-- Settings -->
+    <string name="settings">Impostazioni</string>
+    <string name="currency">Valuta</string>
+    <string name="region">Regione</string>
+    <string name="rounding_mode">Modalità di Arrotondamento</string>
+    <string name="theme">Tema</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">Sblocca Premium</string>
+    <string name="premium_features">Funzionalità Premium</string>
+    
+    <!-- Common -->
+    <string name="back">Indietro</string>
+    <string name="cancel">Annulla</string>
+    <string name="ok">OK</string>
+</resources>

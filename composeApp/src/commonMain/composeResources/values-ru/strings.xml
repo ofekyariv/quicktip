@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">Умный Калькулятор Чаевых для Всего Мира</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">Сумма Счета</string>
+    <string name="tip_percentage">Процент Чаевых</string>
+    <string name="split_between">Разделить Между</string>
+    <string name="per_person">На Человека</string>
+    <string name="breakdown">Детали</string>
+    <string name="subtotal">Промежуточная Сумма</string>
+    <string name="tip">Чаевые</string>
+    <string name="total">Итого</string>
+    <string name="save_to_history">Сохранить в Историю</string>
+    
+    <!-- Settings -->
+    <string name="settings">Настройки</string>
+    <string name="currency">Валюта</string>
+    <string name="region">Регион</string>
+    <string name="rounding_mode">Режим Округления</string>
+    <string name="theme">Тема</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">Разблокировать Премиум</string>
+    <string name="premium_features">Премиум-функции</string>
+    
+    <!-- Common -->
+    <string name="back">Назад</string>
+    <string name="cancel">Отмена</string>
+    <string name="ok">OK</string>
+</resources>

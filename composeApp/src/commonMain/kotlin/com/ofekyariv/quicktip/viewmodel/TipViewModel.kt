@@ -26,6 +26,7 @@ import com.ofekyariv.quicktip.data.models.ThemeMode
 import com.ofekyariv.quicktip.data.models.TipCalculation
 import com.ofekyariv.quicktip.data.repository.CalculationRepository
 import com.ofekyariv.quicktip.data.repository.SettingsRepository
+import com.ofekyariv.quicktip.ads.AdManager
 import com.ofekyariv.quicktip.iap.IAPManager
 import com.ofekyariv.quicktip.iap.IAPProducts
 import com.ofekyariv.quicktip.util.getCurrentTimeMillis
@@ -44,8 +45,11 @@ class TipViewModel(
     private val analytics: AnalyticsTracker,
     private val calculationRepository: CalculationRepository,
     private val settingsRepository: SettingsRepository,
-    private val iapManager: IAPManager
+    private val iapManager: IAPManager,
+    private val adManager: AdManager
 ) : ViewModel() {
+
+    private var calculationsSinceLastAd = 0
 
     private val _uiState = MutableStateFlow(TipUiState())
     val uiState: StateFlow<TipUiState> = _uiState.asStateFlow()
@@ -339,6 +343,15 @@ class TipViewModel(
                 calculationRepository.saveCalculation(calculation)
                 analytics.trackCalculationSaved(billAmount, state.totalAmount)
                 _uiState.update { it.copy(error = null) }
+
+                // Show interstitial ad every 5 calculations (free tier only)
+                if (!state.isPremium) {
+                    calculationsSinceLastAd++
+                    if (calculationsSinceLastAd >= INTERSTITIAL_AD_FREQUENCY) {
+                        adManager.showInterstitialAd()
+                        calculationsSinceLastAd = 0
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Failed to save calculation. Please try again.") }
                 logError("save_calculation_failed", e.message ?: "Unknown error")
@@ -564,6 +577,7 @@ class TipViewModel(
 
     companion object {
         const val FREE_HISTORY_LIMIT = 5
+        const val INTERSTITIAL_AD_FREQUENCY = 5
         const val MAX_BILL_AMOUNT = 999_999.99
         const val MIN_BILL_AMOUNT = 0.01
         const val MAX_PEOPLE = 99

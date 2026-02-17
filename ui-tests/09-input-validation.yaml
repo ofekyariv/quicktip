@@ -1,0 +1,117 @@
+appId: com.ofekyariv.quicktip
+---
+# 09 - Input Validation - Test edge cases and invalid inputs
+
+- launchApp
+
+# Test empty input (Save button should be disabled)
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: ""
+- takeScreenshot: screenshots/09-empty-input
+
+# Test 0 bill amount
+- inputText: "0"
+- tapOn:
+    testTag: "tip_chip_15"
+# Results should show $0.00
+- assertVisible: "0.00"
+- takeScreenshot: screenshots/09-zero-bill
+
+# Test very small amount (0.01)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "0.01"
+- tapOn:
+    testTag: "tip_chip_20"
+# Should calculate (might be $0.00 due to rounding)
+- takeScreenshot: screenshots/09-tiny-amount
+
+# Test large number ($999,999)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "999999"
+- tapOn:
+    testTag: "tip_chip_18"
+# Should calculate large amounts correctly
+- assertVisible: "999999"
+- takeScreenshot: screenshots/09-large-amount
+
+# Test decimal precision (many decimal places)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "123.456789"
+- tapOn:
+    testTag: "tip_chip_15"
+# Should handle and round correctly
+- takeScreenshot: screenshots/09-many-decimals
+
+# Test special characters (should be rejected or ignored)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "$"
+# May not input, or may filter out
+- takeScreenshot: screenshots/09-special-char-dollar
+
+# Try letters (should be rejected)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "abc"
+# Should not accept
+- takeScreenshot: screenshots/09-letters
+
+# Test negative sign (should be rejected)
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "-100"
+# Should reject or show error
+- takeScreenshot: screenshots/09-negative
+
+# Test 0 people split (should be at minimum 1)
+# Decrease button should be disabled at 1
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "100"
+- tapOn:
+    testTag: "tip_chip_15"
+# Try to decrease from 1 (should not work)
+- tapOn:
+    testTag: "split_decrease"
+- assertVisible: "1"
+- takeScreenshot: screenshots/09-min-split-people
+
+# Test custom tip validation (>100%)
+- tapOn:
+    testTag: "tip_chip_custom"
+- tapOn:
+    testTag: "custom_tip_input"
+- inputText: "150"
+- tapOn:
+    testTag: "custom_tip_confirm"
+# Should either clamp to 100 or allow it
+- takeScreenshot: screenshots/09-custom-tip-150
+
+# Test custom tip negative (should reject)
+- tapOn:
+    testTag: "tip_chip_custom"
+- tapOn:
+    testTag: "custom_tip_input"
+- inputText: "-10"
+- tapOn:
+    testTag: "custom_tip_confirm"
+# Should clamp to 0 or reject
+- takeScreenshot: screenshots/09-custom-tip-negative

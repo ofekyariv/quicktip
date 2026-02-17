@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">Calculateur de Pourboire Intelligent Mondial</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">Montant de l\'Addition</string>
+    <string name="tip_percentage">Pourcentage de Pourboire</string>
+    <string name="split_between">Diviser Entre</string>
+    <string name="per_person">Par Personne</string>
+    <string name="breakdown">Détails</string>
+    <string name="subtotal">Sous-total</string>
+    <string name="tip">Pourboire</string>
+    <string name="total">Total</string>
+    <string name="save_to_history">Enregistrer dans l\'Historique</string>
+    
+    <!-- Settings -->
+    <string name="settings">Paramètres</string>
+    <string name="currency">Devise</string>
+    <string name="region">Région</string>
+    <string name="rounding_mode">Mode d\'Arrondi</string>
+    <string name="theme">Thème</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">Débloquer Premium</string>
+    <string name="premium_features">Fonctionnalités Premium</string>
+    
+    <!-- Common -->
+    <string name="back">Retour</string>
+    <string name="cancel">Annuler</string>
+    <string name="ok">OK</string>
+</resources>

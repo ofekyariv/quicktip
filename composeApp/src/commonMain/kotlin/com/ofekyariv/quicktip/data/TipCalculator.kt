@@ -2,7 +2,9 @@ package com.ofekyariv.quicktip.data
 
 import com.ofekyariv.quicktip.data.models.CurrencyInfo
 import com.ofekyariv.quicktip.data.models.RoundingMode
+import com.ofekyariv.quicktip.data.models.ServiceType
 import com.ofekyariv.quicktip.data.models.TipCalculation
+import com.ofekyariv.quicktip.data.tipping.TippingDatabase
 import kotlin.math.ceil
 import kotlin.math.pow
 import kotlin.math.round
@@ -90,6 +92,36 @@ object TipCalculator {
         if (decimals <= 0) return round(amount)
         val multiplier = 10.0.pow(decimals)
         return round(amount * multiplier) / multiplier
+    }
+    
+    /**
+     * Gets suggested tip percentage for a service type and country.
+     * 
+     * @param serviceType The type of service
+     * @param countryCode The ISO country code (e.g., "US", "IL")
+     * @return Suggested tip percentage (midpoint of range) or null if no data available
+     */
+    fun getSuggestedTipPercentage(
+        serviceType: ServiceType,
+        countryCode: String = "US"
+    ): Int? {
+        val countryInfo = TippingDatabase.getByCountryCode(countryCode)
+        return countryInfo?.getSuggestedTip(serviceType)
+    }
+    
+    /**
+     * Gets the tip range for a service type and country.
+     * 
+     * @param serviceType The type of service
+     * @param countryCode The ISO country code (e.g., "US", "IL")
+     * @return Tip percentage range or null if no data available
+     */
+    fun getTipRange(
+        serviceType: ServiceType,
+        countryCode: String = "US"
+    ): IntRange? {
+        val countryInfo = TippingDatabase.getByCountryCode(countryCode)
+        return countryInfo?.getTipRange(serviceType)
     }
     
     /**

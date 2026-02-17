@@ -1,0 +1,72 @@
+appId: com.ofekyariv.quicktip
+---
+# 05 - Regional Rounding - Test rounding behavior changes
+
+- launchApp
+
+# Enter an amount that will show rounding difference: $127.83
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "127.83"
+
+# Select 15% tip (= $19.17, total = $147.00 without rounding)
+- tapOn:
+    testTag: "tip_chip_15"
+- takeScreenshot: screenshots/05-no-rounding
+
+# Verify no rounding is applied initially
+- assertVisible: "147"
+
+# Enable rounding
+- tapOn:
+    testTag: "rounding_switch"
+- takeScreenshot: screenshots/05-rounding-enabled
+
+# The total should now be rounded up (likely to $148.00)
+- assertVisible:
+    testTag: "result_total"
+
+# Test with different amounts
+# Clear and enter $99.99
+- tapOn:
+    testTag: "clear_button"
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "99.99"
+- tapOn:
+    testTag: "tip_chip_20"
+
+# Without rounding: $99.99 + $20.00 = $119.99
+- tapOn:
+    testTag: "rounding_switch"  # Turn off
+- assertVisible: "119.99"
+- takeScreenshot: screenshots/05-no-rounding-99
+
+# With rounding: should round to $120.00
+- tapOn:
+    testTag: "rounding_switch"  # Turn on
+- assertVisible: "120"
+- takeScreenshot: screenshots/05-rounding-120
+
+# Test with Israeli Shekel (₪) rounding (nearest 0.10)
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*ILS.*"
+- tapOn:
+    text: "Rounding Preference"
+- tapOn:
+    text: ".*Nearest 0.10.*"
+- tapOn:
+    text: "Back"
+- takeScreenshot: screenshots/05-ils-rounding
+
+# Enter amount that tests 0.10 rounding: ₪127.83
+- tapOn:
+    testTag: "bill_amount_input"
+- inputText: "127.83"
+- tapOn:
+    testTag: "tip_chip_15"
+- takeScreenshot: screenshots/05-ils-tenth-rounding

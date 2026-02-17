@@ -1,0 +1,48 @@
+appId: com.ofekyariv.quicktip
+---
+# 06 - Settings Persistence - Verify settings survive app restart
+
+- launchApp
+
+# Change currency to EUR
+- tapOn:
+    testTag: "settings_button"
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*EUR.*"
+- assertVisible: "€"
+
+# Change default tip to 25%
+- scroll:
+    direction: UP
+    speed: 50
+- tapOn:
+    text: "Default Tip"
+# The slider should allow setting to 25%
+- tapOn:
+    text: "Back"
+- takeScreenshot: screenshots/06-settings-changed
+
+# Kill and relaunch app
+- stopApp
+- launchApp
+
+# Verify currency persisted (should be EUR)
+- assertVisible: "€"
+- takeScreenshot: screenshots/06-after-restart-main
+
+# Open settings and verify persistence
+- tapOn:
+    testTag: "settings_button"
+- assertVisible: "€"
+- assertVisible: "EUR"
+- takeScreenshot: screenshots/06-after-restart-settings
+
+# Change back to USD for future tests
+- tapOn:
+    text: "Default Currency"
+- tapOn:
+    text: ".*USD.*"
+- tapOn:
+    text: "Back"

@@ -6,6 +6,7 @@ import com.ofekyariv.quicktip.data.database.QuickTipDatabase
 import com.ofekyariv.quicktip.data.datastore.createDataStore
 import com.ofekyariv.quicktip.data.repository.CalculationRepository
 import com.ofekyariv.quicktip.data.repository.SettingsRepository
+import com.ofekyariv.quicktip.viewmodel.HistoryViewModel
 import com.ofekyariv.quicktip.viewmodel.TipViewModel
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -29,7 +30,8 @@ val appModule = module {
     single { SettingsRepository(get()) }
 
     // ViewModels
-    single { TipViewModel(get(), get(), get(), get()) }
+    single { TipViewModel(get(), get(), get(), get(), get()) }
+    single { HistoryViewModel(get(), get(), get()) }
 }
 
 /**

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">Calculadora Inteligente de Gorjetas Mundial</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">Valor da Conta</string>
+    <string name="tip_percentage">Porcentagem de Gorjeta</string>
+    <string name="split_between">Dividir Entre</string>
+    <string name="per_person">Por Pessoa</string>
+    <string name="breakdown">Detalhamento</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="tip">Gorjeta</string>
+    <string name="total">Total</string>
+    <string name="save_to_history">Salvar no Histórico</string>
+    
+    <!-- Settings -->
+    <string name="settings">Configurações</string>
+    <string name="currency">Moeda</string>
+    <string name="region">Região</string>
+    <string name="rounding_mode">Modo de Arredondamento</string>
+    <string name="theme">Tema</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">Desbloquear Premium</string>
+    <string name="premium_features">Recursos Premium</string>
+    
+    <!-- Common -->
+    <string name="back">Voltar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">OK</string>
+</resources>

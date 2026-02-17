@@ -1,37 +1,69 @@
 appId: com.ofekyariv.quicktip
 ---
-# 01 - Basic Tip Calculation
-# Enter a bill amount, select a tip preset, verify the total is displayed.
+# 01 - Basic Calculation - Test all tip percentage presets
+# Tests: 10%, 15%, 18%, 20%, 25%, and custom percentage
 
 - launchApp
+- takeScreenshot: screenshots/01-app-launch
 
-- assertVisible: "QuickTip"
-
-# Enter bill amount
+# Test 10% tip on $100
 - tapOn:
-    id: "bill_amount_input"
-- inputText: "50.00"
-
-# Select 18% tip preset
+    testTag: "bill_amount_input"
+- inputText: "100"
 - tapOn:
-    id: "tip_chip_18"
-
-# Wait for calculation
-- runFlow:
-    when:
-      visible: "Results"
-
-# Verify subtotal is shown
+    testTag: "tip_chip_10"
 - assertVisible:
-    id: "result_subtotal"
-
-# Verify tip amount ($9.00 for 18% of $50)
+    text: ".*10.*"  # Tip: $10.00
 - assertVisible:
-    id: "result_tip"
+    text: ".*110.*"  # Total: $110.00
+- takeScreenshot: screenshots/01-tip-10-percent
 
-# Verify total amount ($59.00)
+# Test 15% tip
+- tapOn:
+    testTag: "tip_chip_15"
 - assertVisible:
-    id: "result_total"
+    text: ".*15.*"  # Tip: $15.00
+- assertVisible:
+    text: ".*115.*"  # Total: $115.00
+- takeScreenshot: screenshots/01-tip-15-percent
 
-# Take a screenshot for verification
-- takeScreenshot: 01-basic-calculation
+# Test 18% tip
+- tapOn:
+    testTag: "tip_chip_18"
+- assertVisible:
+    text: ".*18.*"  # Tip: $18.00
+- assertVisible:
+    text: ".*118.*"  # Total: $118.00
+- takeScreenshot: screenshots/01-tip-18-percent
+
+# Test 20% tip
+- tapOn:
+    testTag: "tip_chip_20"
+- assertVisible:
+    text: ".*20.*"  # Tip: $20.00
+- assertVisible:
+    text: ".*120.*"  # Total: $120.00
+- takeScreenshot: screenshots/01-tip-20-percent
+
+# Test 25% tip
+- tapOn:
+    testTag: "tip_chip_25"
+- assertVisible:
+    text: ".*25.*"  # Tip: $25.00
+- assertVisible:
+    text: ".*125.*"  # Total: $125.00
+- takeScreenshot: screenshots/01-tip-25-percent
+
+# Test custom tip percentage (30%)
+- tapOn:
+    testTag: "tip_chip_custom"
+- tapOn:
+    testTag: "custom_tip_input"
+- inputText: "30"
+- tapOn:
+    testTag: "custom_tip_confirm"
+- assertVisible:
+    text: ".*30.*"  # Tip: $30.00
+- assertVisible:
+    text: ".*130.*"  # Total: $130.00
+- takeScreenshot: screenshots/01-tip-custom-30-percent

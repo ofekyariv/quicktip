@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">QuickTip</string>
+    <string name="app_tagline">世界対応スマートチップ計算機</string>
+    
+    <!-- Main Screen -->
+    <string name="bill_amount">請求額</string>
+    <string name="tip_percentage">チップのパーセント</string>
+    <string name="split_between">分割人数</string>
+    <string name="per_person">一人あたり</string>
+    <string name="breakdown">内訳</string>
+    <string name="subtotal">小計</string>
+    <string name="tip">チップ</string>
+    <string name="total">合計</string>
+    <string name="save_to_history">履歴に保存</string>
+    
+    <!-- Settings -->
+    <string name="settings">設定</string>
+    <string name="currency">通貨</string>
+    <string name="region">地域</string>
+    <string name="rounding_mode">端数処理モード</string>
+    <string name="theme">テーマ</string>
+    
+    <!-- Premium -->
+    <string name="unlock_premium">プレミアムをアンロック</string>
+    <string name="premium_features">プレミアム機能</string>
+    
+    <!-- Common -->
+    <string name="back">戻る</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ok">OK</string>
+</resources>

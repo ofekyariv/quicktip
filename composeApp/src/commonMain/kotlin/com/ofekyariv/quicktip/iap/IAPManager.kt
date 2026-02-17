@@ -27,5 +27,5 @@ expect class IAPManager {
 
 object IAPProducts {
     const val PREMIUM_UNLOCK = "premium_unlock_quicktip"
-    const val PREMIUM_PRICE = "$0.99"
+    const val PREMIUM_PRICE = "$1.99"
 }
