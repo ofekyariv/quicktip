@@ -94,8 +94,8 @@ android {
         applicationId = "com.ofekyariv.quicktip"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         // Debug builds always use Google test ad IDs
         buildConfigField("String", "ADMOB_APP_ID", "\"ca-app-pub-3940256099942544~3347511713\"")
