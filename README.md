@@ -2,7 +2,7 @@
 
 A smart, elegant tip calculator with country etiquette guides, bill splitting, and regional rounding. Built with Kotlin Multiplatform for Android and iOS.
 
-[![Google Play](https://img.shields.io/badge/Google%20Play-Download-green)](https://play.google.com/store/apps/details?id=com.ofekyariv.quicktip)
+[![Google Play](https://img.shields.io/badge/Google%20Play-Coming%20Soon-yellow)](https://play.google.com/store/apps/details?id=com.ofekyariv.quicktip)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-purple.svg)](https://kotlinlang.org)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.7.1-blue.svg)](https://www.jetbrains.com/lp/compose-multiplatform)
@@ -183,8 +183,8 @@ Copyright 2026 Ofek Yariv
 |---|---|
 | Version | 1.0.1 |
 | Platform | Android (API 24+), iOS (15.0+) |
-| Status | ✅ Live on Google Play |
-| Released | February 2026 |
+| Status | 🟡 Play Store upload pending |
+| Released | February 2026 (pending) |
 
 ---
 
