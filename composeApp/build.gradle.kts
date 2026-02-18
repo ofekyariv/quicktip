@@ -74,6 +74,7 @@ kotlin {
 
             implementation(libs.firebase.app)
             implementation(libs.firebase.analytics)
+            implementation(libs.firebase.config)
             implementation(libs.firebase.crashlytics)
         }
     }
@@ -101,6 +102,7 @@ android {
         buildConfigField("String", "BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/6300978111\"")
         buildConfigField("String", "INTERSTITIAL_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
         buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/5224354917\"")
+        buildConfigField("String", "APP_OPEN_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/9257395921\"")
 
         manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
@@ -136,11 +138,13 @@ android {
             val releaseBannerId = localProperties.getProperty("BANNER_AD_UNIT_ID", "ca-app-pub-3940256099942544/6300978111")
             val releaseInterstitialId = localProperties.getProperty("INTERSTITIAL_AD_UNIT_ID", "ca-app-pub-3940256099942544/1033173712")
             val releaseRewardedId = localProperties.getProperty("REWARDED_AD_UNIT_ID", "ca-app-pub-3940256099942544/5224354917")
+            val releaseAppOpenId = localProperties.getProperty("APP_OPEN_AD_UNIT_ID", "ca-app-pub-3940256099942544/9257395921")
 
             buildConfigField("String", "ADMOB_APP_ID", "\"$releaseAdmobAppId\"")
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$releaseBannerId\"")
             buildConfigField("String", "INTERSTITIAL_AD_UNIT_ID", "\"$releaseInterstitialId\"")
             buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$releaseRewardedId\"")
+            buildConfigField("String", "APP_OPEN_AD_UNIT_ID", "\"$releaseAppOpenId\"")
 
             manifestPlaceholders["admobAppId"] = releaseAdmobAppId
         }

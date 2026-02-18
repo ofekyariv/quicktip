@@ -2,33 +2,18 @@ package com.ofekyariv.quicktip.ads
 
 /**
  * iOS implementation of AdManager.
- * Provides stub implementations since AdMob is Android-specific in this implementation.
+ * Stub implementations — AdMob is Android-specific in this version.
  */
 actual class AdManager {
-    actual fun initialize() {
-        // No-op for iOS
-    }
-
-    actual fun loadInterstitialAd() {
-        // No-op for iOS
-    }
-
-    actual fun showInterstitialAd(): Boolean {
-        // No-op for iOS
-        return false
-    }
-
-    actual fun loadRewardedAd() {
-        // No-op for iOS
-    }
-
-    actual fun showRewardedAd(onRewarded: () -> Unit): Boolean {
-        // No-op for iOS
-        return false
-    }
-
-    actual fun getBannerAdUnitId(): String {
-        // Return empty string for iOS
-        return ""
+    actual fun initialize() {}
+    actual fun loadInterstitialAd() {}
+    actual fun showInterstitialAd(): Boolean = false
+    actual fun loadRewardedAd() {}
+    actual fun showRewardedAd(onRewarded: () -> Unit): Boolean = false
+    actual fun getBannerAdUnitId(): String = ""
+    actual fun loadAppOpenAd() {}
+    actual fun showAppOpenAd(): Boolean = false
+    actual suspend fun fetchRemoteConfig() {
+        RemoteAdConfig.fetch()
     }
 }

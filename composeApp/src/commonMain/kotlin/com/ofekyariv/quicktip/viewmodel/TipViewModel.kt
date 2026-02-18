@@ -60,10 +60,11 @@ class TipViewModel(
     val uiState: StateFlow<TipUiState> = _uiState.asStateFlow()
 
     init {
-        // TODO: Ad scaffold — App-open ad on cold start
-        // showAppOpenAd() — show an app-open ad on every cold start (max 1 per 30 min session)
-        // Premium users skip all ad triggers.
-        onAppColdStart()
+        // Fetch Remote Config and show app-open ad on cold start
+        viewModelScope.launch {
+            adManager.fetchRemoteConfig()
+            onAppColdStart()
+        }
 
         // Load country tip info based on device locale
         val deviceCountryCode = try {
@@ -128,28 +129,29 @@ class TipViewModel(
     // ─── Ad Scaffold (placeholders) ───────────────────────────────────────
 
     /**
-     * TODO: Ad scaffold — App-open ad on cold start.
-     * Show an app-open ad on every cold start (max 1 per 30-min session).
+     * Show an app-open ad on cold start (with cooldown from Remote Config).
      * Premium users skip all ad triggers.
      */
     private fun onAppColdStart() {
-        // TODO: Implement actual AdMob app-open ad
-        // if (!_uiState.value.isPremium) { adManager.showAppOpenAd() }
+        if (!_uiState.value.isPremium) {
+            adManager.loadAppOpenAd()
+            adManager.showAppOpenAd()
+        }
     }
 
     /**
-     * TODO: Ad scaffold — Interstitial after 3rd calculation per session (cap 2/session).
-     * Called after each auto-save. Premium users skip.
+     * Show interstitial after 3rd calculation per session (cap 2/session).
+     * Checks RemoteAdConfig via AdManager. Premium users skip.
      */
     private fun maybeShowInterstitialAd() {
         val state = _uiState.value
         if (state.isPremium) return
         calculationsThisSession++
         if (calculationsThisSession >= INTERSTITIAL_CALC_THRESHOLD && interstitialsShownThisSession < MAX_INTERSTITIALS_PER_SESSION) {
-            // TODO: Implement actual AdMob interstitial ad
-            // adManager.showInterstitialAd()
-            interstitialsShownThisSession++
-            calculationsThisSession = 0 // reset counter
+            if (adManager.showInterstitialAd()) {
+                interstitialsShownThisSession++
+            }
+            calculationsThisSession = 0
         }
     }
 
